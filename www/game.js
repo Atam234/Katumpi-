@@ -42,7 +42,7 @@ const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.75 : 2));
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = isMobile ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
 const FOG_COLOR = 0xffe4c4;
@@ -769,7 +769,7 @@ let state = 'menu'; // menu | playing | paused | dying | over
 let audioStarted = false;
 const player = {
   lane: 1, prevLane: 1, x: 0, y: 0, z: 0, vy: 0, grounded: true,
-  slide: 0, stumble: 0, phase: 0, spin: 0, spinning: false, shield: false, magnet: 0,
+  slide: 0, stumble: 0, phase: 0, spin: 0, spinning: false, shield: false, magnet: 0, vx: 0,
 };
 let speed = BASE_SPEED, elapsed = 0, distance = 0, coins = 0, score = 0, scoreF = 0, level = 1;
 let nextRowZ = -45;
@@ -996,7 +996,8 @@ function clearRun() {
 
 function resetWorld() {
   clearRun();
-  Object.assign(player, { lane: 1, prevLane: 1, x: 0, y: 0, z: 0, vy: 0, grounded: true, slide: 0, stumble: 0, phase: 0, spin: 0, spinning: false, shield: false, magnet: 0 });
+  Object.assign(player, { lane: 1, prevLane: 1, x: 0, y: 0, z: 0, vy: 0, grounded: true, slide: 0, stumble: 0, phase: 0, spin: 0, spinning: false, shield: false, magnet: 0, vx: 0 });
+  camX = 0; camY = 3.4; lookX = 0; lookY = 1.2; bob = 0;
   speed = BASE_SPEED; elapsed = 0; distance = 0; coins = 0; score = 0; scoreF = 0; level = 1; shake = 0;
   nextRowZ = -45;
   segments.forEach((seg, i) => {
@@ -1198,7 +1199,17 @@ function updatePlaying(dt) {
   scoreF += dz * level;
 
   // galaw pakaliwa/pakanan
-  player.x += (LANE_X[player.lane] - player.x) * Math.min(1, dt * 14);
+  // makinis na paglipat ng lane (critically-damped spring: banayad ang simula at hinto)
+  // (SmoothDamp — stable kahit mabagal ang frame rate)
+  {
+    const omega = 2 / 0.1, xo = omega * dt;
+    const ex = 1 / (1 + xo + 0.48 * xo * xo + 0.235 * xo * xo * xo);
+    const target = LANE_X[player.lane];
+    const change = player.x - target;
+    const temp = (player.vx + omega * change) * dt;
+    player.vx = (player.vx - omega * temp) * ex;
+    player.x = target + (change + temp) * ex;
+  }
 
   // talon / bagsak
   if (!player.grounded) {
@@ -1419,18 +1430,20 @@ function animateKatumpi(dt) {
   const s = Math.sin(player.phase);
 
   K.head.rotation.z = lerp(K.head.rotation.z, 0, k);
-  K.spine.rotation.z = 0;
+  const kr = Math.min(1, dt * 22); // mabilis pero makinis na pagsunod sa takbo
+  const turn = clamp(-player.vx * 0.035, -0.35, 0.35); // humaharap sa direksyon ng lipat
   // ikot habang tumatalon
   if (player.spinning && !player.grounded) {
     player.spin = Math.min(1, player.spin + dt * 1.6);
     K.model.rotation.y = Math.PI + smooth(player.spin) * Math.PI * 2;
   } else {
-    K.model.rotation.y = Math.PI;
+    if (K.model.rotation.y > Math.PI * 2) K.model.rotation.y -= Math.PI * 2; // tapos na ang ikot
+    K.model.rotation.y = lerp(K.model.rotation.y, Math.PI + turn, kr);
   }
 
   if (sliding) {
-    K.pose.rotation.x = lerp(K.pose.rotation.x, 1.15, Math.min(1, dt * 18));
-    K.pose.position.y = lerp(K.pose.position.y, 0.28, Math.min(1, dt * 18));
+    K.pose.rotation.x = lerp(K.pose.rotation.x, 1.15, Math.min(1, dt * 16));
+    K.pose.position.y = lerp(K.pose.position.y, 0.28, Math.min(1, dt * 16));
     legL.rotation.x = lerp(legL.rotation.x, 0.1, k);
     legR.rotation.x = lerp(legR.rotation.x, -0.1, k);
     armL.rotation.x = lerp(armL.rotation.x, -2.6, k);
@@ -1451,25 +1464,26 @@ function animateKatumpi(dt) {
     K.spine.rotation.x = lerp(K.spine.rotation.x, 0.05, k);
     K.head.rotation.x = lerp(K.head.rotation.x, -0.15, k);
   } else {
-    K.pose.rotation.x = lerp(K.pose.rotation.x, 0, Math.min(1, dt * 18));
-    K.pose.position.y = Math.abs(s) * 0.09;
-    legL.rotation.x = s * 0.95;
-    legR.rotation.x = -s * 0.95;
-    armL.rotation.x = -s * 0.9;
-    armR.rotation.x = s * 0.9;
+    K.pose.rotation.x = lerp(K.pose.rotation.x, 0, Math.min(1, dt * 14));
+    K.pose.position.y = lerp(K.pose.position.y, s * s * 0.085, kr);
+    legL.rotation.x = lerp(legL.rotation.x, s * 0.95, kr);
+    legR.rotation.x = lerp(legR.rotation.x, -s * 0.95, kr);
+    armL.rotation.x = lerp(armL.rotation.x, -s * 0.9, kr);
+    armR.rotation.x = lerp(armR.rotation.x, s * 0.9, kr);
     armL.rotation.z = lerp(armL.rotation.z, -0.18, k);
     armR.rotation.z = lerp(armR.rotation.z, 0.18, k);
     K.spine.rotation.x = lerp(K.spine.rotation.x, 0.16, k);
     K.head.rotation.x = lerp(K.head.rotation.x, -0.08, k);
     // tumatagilid kapag lumilipat ng lane
-    K.spine.rotation.z = (LANE_X[player.lane] - player.x) * -0.08;
   }
+  // tumatagilid kapag lumilipat ng lane
+  K.spine.rotation.z = lerp(K.spine.rotation.z, clamp(player.vx * 0.012, -0.25, 0.25), kr);
   if (K.hijab) {
-    K.tails.forEach((t) => { t.rotation.x = -0.35 - Math.abs(Math.sin(player.phase)) * 0.25 - (player.grounded ? 0 : 0.3); });
+    K.tails.forEach((t) => { t.rotation.x = lerp(t.rotation.x, -0.35 - Math.sin(player.phase) ** 2 * 0.25 - (player.grounded ? 0 : 0.3), kr); });
   } else K.tails.forEach((t, i) => {
     const side = i ? 1 : -1;
-    t.rotation.z = side * (0.35 + Math.sin(player.phase * 2 + i) * 0.25 + (player.grounded ? 0 : 0.4));
-    t.rotation.x = Math.cos(player.phase) * 0.2;
+    t.rotation.z = lerp(t.rotation.z, side * (0.35 + Math.sin(player.phase * 2 + i) * 0.25 + (player.grounded ? 0 : 0.4)) - player.vx * 0.02, kr);
+    t.rotation.x = lerp(t.rotation.x, Math.cos(player.phase) * 0.2, kr);
   });
 }
 
@@ -1477,6 +1491,8 @@ function animateKatumpi(dt) {
 const camPos = new THREE.Vector3();
 const camLook = new THREE.Vector3();
 const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3(), tmpC = new THREE.Vector3(), tmpD = new THREE.Vector3();
+const damp = (a, b, lambda, dt) => lerp(a, b, 1 - Math.exp(-lambda * dt));
+let camX = 0, camY = 3.4, lookX = 0, lookY = 1.2, bob = 0;
 function updateCamera(dt) {
   const t = performance.now() * 0.001;
   // menu pose: nakaharap kay Katumpi
@@ -1484,8 +1500,16 @@ function updateCamera(dt) {
   tmpA.set(player.x + Math.sin(ang) * 4.6, 1.6, player.z - Math.cos(ang) * 4.6);
   tmpB.set(player.x, 1.15, player.z);
   // game pose: nasa likod
-  tmpC.set(player.x * 0.55, 3.4 + player.y * 0.35, player.z + 6.8);
-  tmpD.set(player.x * 0.35, 1.2 + player.y * 0.25, player.z - 8);
+  // makinis na pagsunod ng camera (hindi biglaan)
+  if (state !== 'paused') {
+    camX = damp(camX, player.x * 0.55, 6, dt);
+    camY = damp(camY, 3.4 + player.y * 0.3, 4.5, dt);
+    lookX = damp(lookX, player.x * 0.4, 8, dt);
+    lookY = damp(lookY, 1.2 + player.y * 0.22, 5, dt);
+    if (state === 'playing') bob = damp(bob, Math.sin(player.phase * 2) * 0.025 * (player.grounded && player.slide <= 0 ? 1 : 0), 10, dt);
+  }
+  tmpC.set(camX, camY + bob, player.z + 6.8);
+  tmpD.set(lookX, lookY, player.z - 8);
 
   if (state === 'menu') {
     camPos.copy(tmpA); camLook.copy(tmpB);
@@ -1498,8 +1522,9 @@ function updateCamera(dt) {
   camera.position.copy(camPos);
   if (shake > 0) {
     shake = Math.max(0, shake - dt);
-    camera.position.x += (Math.random() - 0.5) * shake * 0.6;
-    camera.position.y += (Math.random() - 0.5) * shake * 0.6;
+    const tt = performance.now() * 0.05;
+    camera.position.x += Math.sin(tt * 1.7) * shake * 0.3;
+    camera.position.y += Math.cos(tt * 2.3) * shake * 0.3;
   }
   camera.lookAt(camLook);
 }
@@ -1531,11 +1556,47 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
+// Awtomatikong kalidad: kapag bumabagal ang phone, binabawasan ang resolution/anino
+const DPR = window.devicePixelRatio || 1;
+const QUALITY = [
+  { pr: Math.min(DPR, isMobile ? 1.75 : 2), shadow: true },
+  { pr: Math.min(DPR, 1.4), shadow: true },
+  { pr: Math.min(DPR, 1.15), shadow: true },
+  { pr: Math.min(DPR, 1.0), shadow: false },
+  { pr: Math.min(DPR, 0.8), shadow: false },
+];
+let quality = clamp(store.get('katumpi_quality', 0) | 0, 0, QUALITY.length - 1);
+function applyQuality() {
+  const q = QUALITY[quality];
+  renderer.setPixelRatio(q.pr);
+  sun.castShadow = q.shadow;
+  resize();
+}
+applyQuality();
+let perfT = 0, perfN = 0;
+function watchPerf(raw) {
+  if (state !== 'playing' || elapsed < 2 || raw > 0.25) return;
+  perfT += raw; perfN++;
+  if (perfT < 3) return;
+  const fps = perfN / perfT;
+  perfT = 0; perfN = 0;
+  if (fps < 45 && quality < QUALITY.length - 1) {
+    quality++;
+    applyQuality();
+    store.set('katumpi_quality', quality);
+  }
+}
+
 const clock = new THREE.Clock();
 let firstFrame = true;
+let dtS = 1 / 60;
 function loop() {
   requestAnimationFrame(loop);
-  const dt = Math.min(0.05, clock.getDelta());
+  const raw = clock.getDelta();
+  watchPerf(raw);
+  // pinapantay ang frame time para walang pag-uutal (stutter)
+  dtS += (Math.min(raw, 0.1) - dtS) * 0.3;
+  const dt = Math.min(0.05, dtS);
   if (state === 'playing') { updatePlaying(dt); updateHud(); }
   if (state !== 'paused') updateWorld(dt);
   animateKatumpi(dt);
