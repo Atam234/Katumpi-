@@ -152,3 +152,5 @@ h2 {
   font-size: 15px; font-weight: 800;
 }
 #finalLevel { font-weight: 700; opacity: .95; }
+
+.small.off { background: rgba(80, 80, 90, .85); box-shadow: 0 4px 0 #2d2d35; opacity: .9; }

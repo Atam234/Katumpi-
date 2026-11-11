@@ -678,7 +678,9 @@ music.loop = true;
 music.preload = 'auto';
 const MUSIC_VOL = 0.6;
 music.volume = MUSIC_VOL;
-let muted = store.get('katumpi_muted', false);
+// Hiwalay ang Musika (background) at Tunog (sound effects)
+let musicOn = store.get('katumpi_music', !store.get('katumpi_muted', false));
+let sfxOn = store.get('katumpi_sfx', true);
 let actx = null;
 
 function ensureAudio() {
@@ -689,11 +691,11 @@ function ensureAudio() {
   if (actx && actx.state === 'suspended') actx.resume();
 }
 function playMusic() {
-  if (muted) return;
+  if (!musicOn) return;
   music.play().catch(() => {});
 }
 function tone(type, f1, f2, dur, vol, delay = 0) {
-  if (muted || !actx) return;
+  if (!sfxOn || !actx) return;
   const t = actx.currentTime + delay;
   const o = actx.createOscillator(), g = actx.createGain();
   o.type = type;
@@ -718,12 +720,24 @@ const sfx = {
   shieldBreak() { tone('sawtooth', 1200, 200, 0.35, 0.08); },
 };
 
-function setMuted(m) {
-  muted = m;
-  store.set('katumpi_muted', m);
-  for (const b of [ui.muteBtn, ui.muteBtn2]) b.textContent = m ? '🔇 Musika' : '🔊 Musika';
-  if (m) music.pause();
-  else if (state !== 'menu' || audioStarted) playMusic();
+function setMusic(on) {
+  musicOn = on;
+  store.set('katumpi_music', on);
+  for (const b of [ui.musicBtn, ui.musicBtn2]) {
+    b.textContent = on ? '🎵 Musika: ON' : '🎵 Musika: OFF';
+    b.classList.toggle('off', !on);
+  }
+  if (!on) music.pause();
+  else if (audioStarted && state !== 'paused') playMusic();
+}
+function setSfx(on) {
+  sfxOn = on;
+  store.set('katumpi_sfx', on);
+  for (const b of [ui.sfxBtn, ui.sfxBtn2]) {
+    b.textContent = on ? '🔔 Tunog: ON' : '🔕 Tunog: OFF';
+    b.classList.toggle('off', !on);
+  }
+  if (on) sfx.coin();
 }
 
 // ------------------------------------------------------------------
@@ -735,7 +749,7 @@ const ui = {
   menu: $('menu'), pause: $('pause'), over: $('over'), quip: $('quip'),
   bestMenu: $('bestMenu'), finalScore: $('finalScore'), finalCoins: $('finalCoins'),
   finalBest: $('finalBest'), newBest: $('newBest'),
-  muteBtn: $('muteBtn'), muteBtn2: $('muteBtn2'),
+  musicBtn: $('musicBtn'), musicBtn2: $('musicBtn2'), sfxBtn: $('sfxBtn'), sfxBtn2: $('sfxBtn2'),
   level: $('level'), powers: $('powers'), charName: $('charName'), finalLevel: $('finalLevel'),
 };
 let best = store.get('katumpi_best', 0);
@@ -1154,8 +1168,8 @@ $('pauseBtn').addEventListener('click', pauseGame);
 $('resumeBtn').addEventListener('click', resumeGame);
 $('homeBtn').addEventListener('click', goMenu);
 $('homeBtn2').addEventListener('click', goMenu);
-ui.muteBtn.addEventListener('click', () => { ensureAudio(); setMuted(!muted); });
-ui.muteBtn2.addEventListener('click', () => { ensureAudio(); setMuted(!muted); });
+for (const b of [ui.musicBtn, ui.musicBtn2]) b.addEventListener('click', () => { ensureAudio(); audioStarted = true; setMusic(!musicOn); });
+for (const b of [ui.sfxBtn, ui.sfxBtn2]) b.addEventListener('click', () => { ensureAudio(); setSfx(!sfxOn); });
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
@@ -1534,7 +1548,8 @@ function loop() {
 }
 
 resetWorld();
-setMuted(muted);
+setMusic(musicOn);
+setSfx(sfxOn);
 loop();
 
 // Offline / install support (PWA)
@@ -1548,4 +1563,4 @@ window.__katumpiAppPause = () => { if (state === 'playing') pauseGame(); music.p
 window.__katumpiAppResume = () => { if (state !== 'paused' && audioStarted) playMusic(); };
 
 // para sa testing
-window.__katumpi = { get state() { return state; }, get level() { return level; }, player, act, startGame, setCharacter, obstacles, powerList, get speed() { return speed; }, get score() { return score; }, warp(d) { distance = d; elapsed = d / 25; } };
+window.__katumpi = { get state() { return state; }, get level() { return level; }, player, act, startGame, setCharacter, obstacles, powerList, get speed() { return speed; }, get score() { return score; }, warp(d) { distance = d; elapsed = d / 25; }, get audio() { return { musicPlaying: !music.paused, musicOn, sfxOn }; } };

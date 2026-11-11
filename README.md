@@ -28,7 +28,7 @@ Ang mga kulay ay hango sa langkit/okir (pula, dilaw, berde, lila).
 - Kunin ang mga **barya** (+5 puntos bawat isa).
 - Kapag tumama sa gilid, tatalbog si Katumpi pabalik — pero kung dalawang beses agad, nadapa na siya!
 - Pabilis nang pabilis ang takbo.
-- Ang musika ay nasa `www/assets/music.mp3`.
+- Ang musika ay nasa `www/assets/music.mp3`. Sa menu at pause, may hiwalay na switch para sa **🎵 Musika** at **🔔 Tunog** (sound effects).
 
 ## Patakbuhin
 
