@@ -24,6 +24,8 @@
     <div class="hud-left">
       <div id="score">0</div>
       <div id="dist">0 m</div>
+      <div id="level">Antas 1 • x1</div>
+      <div id="powers"></div>
     </div>
     <div class="hud-right">
       <div id="coins"><span class="coin-ico"></span><span id="coinCount">0</span></div>
@@ -41,6 +43,11 @@
       <p class="tag">Ang masayahin at makulit na batang taga-Tuca 💛</p>
     </div>
     <div class="menu-bottom">
+      <div class="charsel">
+        <button id="prevChar" class="arrow" aria-label="Nakaraang karakter">◀</button>
+        <div id="charName">Katumpi</div>
+        <button id="nextChar" class="arrow" aria-label="Susunod na karakter">▶</button>
+      </div>
       <button id="playBtn" class="big">▶ MAGLARO</button>
       <div class="howto">
         <span>⬅ ➡ Lumipat</span>
@@ -68,6 +75,7 @@
   <div id="over" class="screen panel hidden">
     <div class="card">
       <h2>Aray ko! Nadapa si Katumpi!</h2>
+      <div id="finalLevel"></div>
       <div id="newBest" class="hidden">✨ BAGONG RECORD! ✨</div>
       <div class="stats">
         <div><small>Score</small><b id="finalScore">0</b></div>

@@ -133,3 +133,22 @@ h2 {
   80% { opacity: 1; }
   100% { opacity: 0; transform: translate(-50%, -16px) scale(1); }
 }
+
+/* Pagpili ng karakter */
+.charsel { display: flex; align-items: center; gap: 10px; }
+.charsel .arrow {
+  width: 46px; height: 46px; font-size: 18px;
+  background: rgba(123, 44, 191, .9); box-shadow: 0 4px 0 #4c1d95;
+}
+#charName {
+  min-width: 190px; text-align: center; font-weight: 800; font-size: 18px;
+  padding: 10px 16px; border-radius: 999px; background: rgba(0,0,0,.4);
+  text-shadow: 0 2px 0 rgba(0,0,0,.3);
+}
+#level { font-size: 13px; font-weight: 800; color: #ffd23f; margin-top: 2px; }
+#powers { display: flex; gap: 6px; margin-top: 6px; }
+#powers span {
+  background: rgba(0,0,0,.35); border-radius: 999px; padding: 3px 10px;
+  font-size: 15px; font-weight: 800;
+}
+#finalLevel { font-weight: 700; opacity: .95; }

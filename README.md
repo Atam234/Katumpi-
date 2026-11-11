@@ -16,7 +16,15 @@ Ang mga kulay ay hango sa langkit/okir (pula, dilaw, berde, lila).
 | Dumausdos (sa ilalim ng banner) | Swipe ⬇ | ↓ / S |
 | Pause | ❚❚ button | P / Esc |
 
+- **Dalawang Katumpi:** naka-pigtails o naka-**hijab** — piliin sa menu gamit ang ◀ ▶.
 - Iwasan ang **jeep** — kailangan lumipat ng lane.
+- **Antas (levels):** bawat 400 m tataas ang antas — bibilis ang takbo at dodoble ang puntos (x2, x3…).
+- Mga hamon na lumalabas habang tumataas ang antas:
+  - 🐔 **Manok** na tumatawid sa daan — talunan o iwasan
+  - 🚙🚙 **Trapik** — talon ⬆ tapos dausdos ⬇ agad sa iisang lane
+  - 🚙 **Paparating na jeep** — umaandar papunta sa iyo!
+  - ⬅➡ **Zigzag** — sunod-sunod na jeep, bilisan ang paglipat
+- Power-ups: 🧲 **Magnet** (hinihigop ang barya, 10 seg) at 🛡️ **Kalasag** (ligtas sa isang bangga).
 - Kunin ang mga **barya** (+5 puntos bawat isa).
 - Kapag tumama sa gilid, tatalbog si Katumpi pabalik — pero kung dalawang beses agad, nadapa na siya!
 - Pabilis nang pabilis ang takbo.

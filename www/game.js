@@ -13,7 +13,7 @@ const STAND_H = 1.75;
 const SLIDE_H = 0.8;
 const SLIDE_TIME = 0.75;
 const BASE_SPEED = 15;
-const MAX_SPEED = 38;
+const MAX_SPEED = 42;
 const COLORS = {
   red: 0xd62839, yellow: 0xffc300, green: 0x2a9d3f,
   violet: 0x7b2cbf, orange: 0xff7b00, magenta: 0xe63995,
@@ -511,17 +511,38 @@ scene.add(welcome);
 // ------------------------------------------------------------------
 // Si Katumpi
 // ------------------------------------------------------------------
-function makeKatumpi() {
+const hijabDressTex = canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#3bb6a0'; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#ffd86b';
+  for (let y = 20; y < 180; y += 22) for (let x = (y / 22) % 2 ? 0 : 11; x < w; x += 22) {
+    g.beginPath(); g.moveTo(x, y - 4); g.lineTo(x + 4, y); g.lineTo(x, y + 4); g.lineTo(x - 4, y); g.closePath(); g.fill();
+  }
+  g.save(); g.translate(0, 196); g.beginPath(); g.rect(0, 0, w, 60); g.clip();
+  drawLangkit(g, w, 60, 2); g.restore();
+});
+hijabDressTex.repeat.set(3, 1);
+
+const CHARACTERS = [
+  { id: 'classic', name: 'Katumpi • Pigtails' },
+  { id: 'hijab', name: 'Katumpi • Hijab' },
+];
+
+function makeKatumpi(style = 'classic') {
+  const hijab = style === 'hijab';
   const T = (c, extra = {}) => new THREE.MeshToonMaterial({ color: c, ...extra });
   const skin = T(0xc68a5e);
   const hairM = T(0x1b1210);
-  const blouse = T(0xffc93c);
-  const red = T(COLORS.red);
-  const shoe = T(0xe63995);
+  const blouse = T(hijab ? 0x3bb6a0 : 0xffc93c);
+  const red = T(hijab ? 0xffd86b : COLORS.red);
+  const shoe = T(hijab ? 0xffffff : 0xe63995);
+  const legM = hijab ? T(0x5b3f8f) : skin;
+  const sleeve = hijab ? blouse : skin;
   const white = new THREE.MeshBasicMaterial({ color: 0xffffff });
   const black = new THREE.MeshBasicMaterial({ color: 0x1a0f0a });
   const blush = new THREE.MeshBasicMaterial({ color: 0xff8fa3, transparent: true, opacity: 0.75 });
-  const skirtM = new THREE.MeshToonMaterial({ map: malongTex, side: THREE.DoubleSide });
+  const skirtM = new THREE.MeshToonMaterial({ map: hijab ? hijabDressTex : malongTex, side: THREE.DoubleSide });
+  const hijabM = new THREE.MeshToonMaterial({ color: 0xff8fb8, side: THREE.DoubleSide });
+  const trimM = T(0xfff3f8);
 
   const meshes = [];
   const M = (geo, mat, parent, x = 0, y = 0, z = 0) => {
@@ -541,57 +562,80 @@ function makeKatumpi() {
   const hips = new THREE.Group(); hips.position.y = 0.82; model.add(hips);
   const legs = [-1, 1].map((s) => {
     const g = new THREE.Group(); g.position.x = s * 0.12; hips.add(g);
-    M(CY(0.075, 0.062, 0.74, 8), skin, g, 0, -0.38, 0);
+    M(CY(0.075, 0.062, 0.74, 8), legM, g, 0, -0.38, 0);
     M(B(0.17, 0.11, 0.28), shoe, g, 0, -0.77, 0.05);
-    M(B(0.18, 0.04, 0.29), new THREE.MeshToonMaterial({ color: 0xffffff }), g, 0, -0.81, 0.05);
+    M(B(0.18, 0.04, 0.29), T(hijab ? 0xff8fb8 : 0xffffff), g, 0, -0.81, 0.05);
     return g;
   });
 
   // body
   const spine = new THREE.Group(); spine.position.y = 0.82; model.add(spine);
-  M(new THREE.CylinderGeometry(0.21, 0.4, 0.55, 20, 1, true), skirtM, spine, 0, 0.0, 0); // malong-style na palda
+  if (hijab) M(new THREE.CylinderGeometry(0.21, 0.42, 0.82, 20, 1, true), skirtM, spine, 0, -0.14, 0); // mahabang bestida
+  else M(new THREE.CylinderGeometry(0.21, 0.4, 0.55, 20, 1, true), skirtM, spine, 0, 0.0, 0); // malong-style na palda
   M(CY(0.22, 0.22, 0.06, 16), red, spine, 0, 0.27, 0); // sinturon
   M(CY(0.17, 0.21, 0.42, 14), blouse, spine, 0, 0.5, 0);
-  M(CY(0.175, 0.175, 0.07, 14), red, spine, 0, 0.7, 0); // kwelyo
+  M(CY(0.175, 0.175, 0.07, 14), red, spine, 0, 0.7, 0);
   M(CY(0.06, 0.07, 0.12, 8), skin, spine, 0, 0.78, 0);
 
   // arms
   const arms = [-1, 1].map((s) => {
     const g = new THREE.Group(); g.position.set(s * 0.22, 0.66, 0); spine.add(g);
     M(SP(0.085, 10, 8), blouse, g, 0, -0.03, 0);
-    M(CY(0.062, 0.05, 0.5, 8), skin, g, 0, -0.29, 0);
+    M(CY(0.062, 0.055, 0.5, 8), sleeve, g, 0, -0.29, 0);
     M(SP(0.065, 8, 6), skin, g, 0, -0.56, 0);
-    M(CY(0.07, 0.07, 0.05, 10), T(COLORS.green), g, 0, -0.47, 0); // pulseras
+    M(CY(0.07, 0.07, 0.05, 10), T(hijab ? 0xffd86b : COLORS.green), g, 0, -0.47, 0);
     return g;
   });
 
   // head
   const head = new THREE.Group(); head.position.y = 0.86; spine.add(head);
-  const HY = 0.24; // gitna ng ulo
+  const HY = 0.24;
   M(SP(0.26, 22, 18), skin, head, 0, HY, 0);
-  const hairCap = new THREE.SphereGeometry(0.285, 22, 16, 0, Math.PI * 2, 0, Math.PI * 0.56);
-  const cap = M(hairCap, hairM, head, 0, HY, -0.01); cap.rotation.x = -0.5;
-  const back = M(SP(0.25, 14, 12), hairM, head, 0, HY - 0.12, -0.1); back.scale.set(1.08, 1.1, 0.9);
-  for (let i = -2; i <= 2; i++) { // bangs
-    const b = M(SP(0.075, 8, 6), hairM, head, i * 0.07, HY + 0.15 - Math.abs(i) * 0.01, 0.2 - Math.abs(i) * 0.02);
-    b.scale.set(1, 0.75, 0.6);
+  let tails = [];
+  if (hijab) {
+    // hijab: nakabalot sa ulo at leeg, bukas lang ang mukha
+    const open = 0.85;
+    M(new THREE.SphereGeometry(0.295, 26, 18, Math.PI / 2 + open, Math.PI * 2 - open * 2, 0, Math.PI * 0.86), hijabM, head, 0, HY, 0);
+    M(new THREE.SphereGeometry(0.297, 26, 8, 0, Math.PI * 2, 0, Math.PI * 0.3), hijabM, head, 0, HY, 0);
+    M(new THREE.CylinderGeometry(0.2, 0.27, 0.26, 18, 1, true), hijabM, head, 0, HY - 0.29, 0); // sa ilalim ng baba
+    M(new THREE.CylinderGeometry(0.25, 0.44, 0.34, 22, 1, true), hijabM, head, 0, HY - 0.47, -0.01); // balabal sa balikat
+    const trim = M(new THREE.TorusGeometry(0.205, 0.018, 6, 28), trimM, head, 0, HY - 0.02, 0.19);
+    trim.scale.set(1, 1.02, 1);
+    M(SP(0.03, 8, 6), T(0xffd23f), head, 0.13, HY - 0.25, 0.2); // aspile
+    // bulaklak sa gilid ng hijab
+    const fl = new THREE.Group(); fl.position.set(0.22, HY + 0.1, 0.16); fl.rotation.y = 0.8; head.add(fl);
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2;
+      M(SP(0.04, 6, 4), T(0xffffff), fl, Math.cos(a) * 0.045, Math.sin(a) * 0.045, 0);
+    }
+    M(SP(0.03, 6, 4), T(0xffd23f), fl, 0, 0, 0.01);
+    // dulo ng hijab sa likod na umuugoy
+    const tail = new THREE.Group(); tail.position.set(0, HY - 0.3, -0.18); head.add(tail);
+    const tp = M(SP(0.16, 12, 8), hijabM, tail, 0, -0.12, -0.02); tp.scale.set(1.3, 1.1, 0.35);
+    tails = [tail];
+  } else {
+    const hairCap = new THREE.SphereGeometry(0.285, 22, 16, 0, Math.PI * 2, 0, Math.PI * 0.56);
+    const cap = M(hairCap, hairM, head, 0, HY, -0.01); cap.rotation.x = -0.5;
+    const back = M(SP(0.25, 14, 12), hairM, head, 0, HY - 0.12, -0.1); back.scale.set(1.08, 1.1, 0.9);
+    for (let i = -2; i <= 2; i++) {
+      const b = M(SP(0.075, 8, 6), hairM, head, i * 0.07, HY + 0.15 - Math.abs(i) * 0.01, 0.2 - Math.abs(i) * 0.02);
+      b.scale.set(1, 0.75, 0.6);
+    }
+    tails = [-1, 1].map((s) => {
+      const g = new THREE.Group(); g.position.set(s * 0.25, HY + 0.1, -0.05); head.add(g);
+      const t = M(SP(0.11, 10, 8), hairM, g, s * 0.1, -0.12, 0); t.scale.set(0.9, 1.9, 0.9);
+      M(new THREE.TorusGeometry(0.06, 0.025, 6, 12), red, g, s * 0.03, 0.02, 0).rotation.y = Math.PI / 2;
+      const bow1 = M(CO(0.06, 0.13, 4), red, g, s * 0.03, 0.07, 0.07); bow1.rotation.x = -Math.PI / 2;
+      const bow2 = M(CO(0.06, 0.13, 4), red, g, s * 0.03, 0.07, -0.07); bow2.rotation.x = Math.PI / 2;
+      return g;
+    });
+    const fl = new THREE.Group(); fl.position.set(0.16, HY + 0.22, 0.12); head.add(fl);
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2;
+      M(SP(0.04, 6, 4), T(0xffffff), fl, Math.cos(a) * 0.045, Math.sin(a) * 0.045, 0);
+    }
+    M(SP(0.03, 6, 4), T(COLORS.yellow), fl, 0, 0, 0.01);
   }
-  // pigtails na may laso
-  const tails = [-1, 1].map((s) => {
-    const g = new THREE.Group(); g.position.set(s * 0.25, HY + 0.1, -0.05); head.add(g);
-    const t = M(SP(0.11, 10, 8), hairM, g, s * 0.1, -0.12, 0); t.scale.set(0.9, 1.9, 0.9);
-    M(new THREE.TorusGeometry(0.06, 0.025, 6, 12), red, g, s * 0.03, 0.02, 0).rotation.y = Math.PI / 2;
-    const bow1 = M(CO(0.06, 0.13, 4), red, g, s * 0.03, 0.07, 0.07); bow1.rotation.x = -Math.PI / 2;
-    const bow2 = M(CO(0.06, 0.13, 4), red, g, s * 0.03, 0.07, -0.07); bow2.rotation.x = Math.PI / 2;
-    return g;
-  });
-  // bulaklak sa buhok
-  const fl = new THREE.Group(); fl.position.set(0.16, HY + 0.22, 0.12); head.add(fl);
-  for (let i = 0; i < 5; i++) {
-    const a = (i / 5) * Math.PI * 2;
-    M(SP(0.04, 6, 4), T(0xffffff), fl, Math.cos(a) * 0.045, Math.sin(a) * 0.045, 0);
-  }
-  M(SP(0.03, 6, 4), T(COLORS.yellow), fl, 0, 0, 0.01);
   // mukha (nakaharap sa +z ng model)
   const eyes = [-1, 1].map((s) => {
     const g = new THREE.Group(); g.position.set(s * 0.09, HY + 0.02, 0.232); head.add(g);
@@ -606,7 +650,6 @@ function makeKatumpi() {
   mouth.rotation.z = Math.PI; mouth.castShadow = false;
   const nose = M(SP(0.02, 6, 4), skin, head, 0, HY - 0.025, 0.255); nose.castShadow = false;
 
-  // dizzy stars (pag nadapa)
   const stars = new THREE.Group(); stars.position.y = HY + 0.38; stars.visible = false; head.add(stars);
   for (let i = 0; i < 4; i++) {
     const st = new THREE.Mesh(new THREE.OctahedronGeometry(0.07), new THREE.MeshBasicMaterial({ color: 0xffd23f }));
@@ -615,10 +658,16 @@ function makeKatumpi() {
     stars.add(st);
   }
 
-  return { root, pose, model, spine, head, legs, arms, tails, eyes, stars, meshes };
+  // kalasag (shield) na bula sa paligid
+  const bubble = new THREE.Mesh(SP(1.05, 20, 14), new THREE.MeshBasicMaterial({ color: 0x7fe3ff, transparent: true, opacity: 0.25, depthWrite: false }));
+  bubble.position.y = 0.95; bubble.scale.set(0.85, 1.05, 0.85); bubble.visible = false;
+  root.add(bubble);
+
+  return { root, pose, model, spine, head, legs, arms, tails, eyes, stars, bubble, meshes, hijab };
 }
 
-const K = makeKatumpi();
+let charIndex = Math.max(0, CHARACTERS.findIndex((c) => c.id === store.get('katumpi_char', 'classic')));
+let K = makeKatumpi(CHARACTERS[charIndex].id);
 scene.add(K.root);
 
 // ------------------------------------------------------------------
@@ -662,6 +711,11 @@ const sfx = {
   bump() { tone('square', 180, 70, 0.18, 0.1); },
   crash() { tone('sawtooth', 300, 40, 0.6, 0.16); tone('square', 120, 50, 0.4, 0.1, 0.05); },
   lane() { tone('sine', 520, 640, 0.06, 0.04); },
+  honk() { tone('square', 392, 392, 0.18, 0.07); tone('square', 330, 330, 0.25, 0.07, 0.22); },
+  cluck() { tone('square', 900, 500, 0.06, 0.05); tone('square', 950, 520, 0.06, 0.05, 0.1); },
+  power() { [523, 659, 784, 1046].forEach((f, i) => tone('triangle', f, f, 0.12, 0.1, i * 0.06)); },
+  level() { [392, 523, 659, 784, 1046].forEach((f, i) => tone('sine', f, f * 1.01, 0.16, 0.1, i * 0.08)); },
+  shieldBreak() { tone('sawtooth', 1200, 200, 0.35, 0.08); },
 };
 
 function setMuted(m) {
@@ -682,6 +736,7 @@ const ui = {
   bestMenu: $('bestMenu'), finalScore: $('finalScore'), finalCoins: $('finalCoins'),
   finalBest: $('finalBest'), newBest: $('newBest'),
   muteBtn: $('muteBtn'), muteBtn2: $('muteBtn2'),
+  level: $('level'), powers: $('powers'), charName: $('charName'), finalLevel: $('finalLevel'),
 };
 let best = store.get('katumpi_best', 0);
 ui.bestMenu.textContent = `🏆 ${best}`;
@@ -700,14 +755,27 @@ let state = 'menu'; // menu | playing | paused | dying | over
 let audioStarted = false;
 const player = {
   lane: 1, prevLane: 1, x: 0, y: 0, z: 0, vy: 0, grounded: true,
-  slide: 0, stumble: 0, phase: 0, spin: 0, spinning: false,
+  slide: 0, stumble: 0, phase: 0, spin: 0, spinning: false, shield: false, magnet: 0,
 };
-let speed = BASE_SPEED, elapsed = 0, distance = 0, coins = 0, score = 0;
+let speed = BASE_SPEED, elapsed = 0, distance = 0, coins = 0, score = 0, scoreF = 0, level = 1;
 let nextRowZ = -45;
 let shake = 0, deathT = 0, startBlend = 1, menuT = 0, blinkT = 2, quipT = 6;
 const obstacles = [];
 const coinList = [];
-const hintShown = { low: false, high: false, block: false };
+const powerList = [];
+const LEVEL_DIST = 400;
+const hintShown = {};
+const HINTS = {
+  low: 'Swipe pataas ⬆ — Talon!',
+  high: 'Swipe pababa ⬇ — Dausdos!',
+  block: 'Swipe ⬅ ➡ — Umiwas!',
+  manok: 'Manok! 🐔 Talunan o iwasan!',
+  oncoming: 'Paparating na jeep! 🚙 Umiwas!',
+  combo: 'Trapik! Talon ⬆ tapos dausdos ⬇!',
+  zigzag: 'Zigzag! ⬅➡ Bilis ng kamay!',
+  magnet: '🧲 Magnet — hihigupin ang barya!',
+  shield: '🛡️ Kalasag — ligtas sa isang bangga!',
+};
 
 const coinGeo = CY(0.32, 0.32, 0.08, 20); coinGeo.rotateX(Math.PI / 2);
 const coinMat = new THREE.MeshPhongMaterial({ color: 0xffc81a, emissive: 0x6b4500, specular: 0xffffff, shininess: 90 });
@@ -724,8 +792,48 @@ function addCoin(x, y, z) {
   coinList.push({ mesh: g, x, y, z, taken: false, t: 0 });
 }
 
-function addObstacle(type, lane, z) {
+// Manok na tumatawid (nakaharap sa +x)
+const MANOK_GEO = build((g) => {
+  const body = part(g, SP(1, 12, 10), 0xfaf6ee, 0, 0.5, 0); body.scale.set(0.34, 0.27, 0.24);
+  const tail = part(g, CO(0.16, 0.42, 6), 0x2b5d3a, -0.33, 0.7, 0, 0, 0, 0.9);
+  part(g, CO(0.1, 0.32, 6), 0xc0392b, -0.3, 0.74, 0.06, 0, 0, 0.6);
+  void tail;
+  part(g, SP(0.15, 10, 8), 0xfaf6ee, 0.27, 0.82, 0);
+  for (let i = 0; i < 3; i++) part(g, B(0.05, 0.09, 0.04), 0xe02020, 0.22 + i * 0.06, 0.98 - Math.abs(i - 1) * 0.02, 0);
+  part(g, CO(0.045, 0.13, 6), 0xffb300, 0.45, 0.8, 0, 0, 0, -Math.PI / 2);
+  part(g, SP(0.04, 6, 4), 0xe02020, 0.39, 0.7, 0);
+  for (const s of [-1, 1]) {
+    part(g, SP(0.025, 6, 4), 0x111111, 0.35, 0.86, s * 0.11);
+    part(g, CY(0.025, 0.025, 0.3, 5), 0xffa000, 0, 0.17, s * 0.08);
+    const w = part(g, SP(1, 8, 6), 0xece4d4, -0.02, 0.52, s * 0.22); w.scale.set(0.22, 0.14, 0.05);
+  }
+});
+
+// Power-ups
+const magnetGeo = build((g) => {
+  part(g, new THREE.TorusGeometry(0.3, 0.1, 8, 18, Math.PI), 0xe53935, 0, 0.05, 0);
+  for (const s of [-1, 1]) part(g, B(0.2, 0.2, 0.2), 0xd0d0d0, s * 0.3, -0.07, 0);
+});
+const shieldGeo = build((g) => {
+  part(g, new THREE.OctahedronGeometry(0.22), 0xffd23f, 0, 0, 0);
+});
+const shieldBubbleMat = new THREE.MeshBasicMaterial({ color: 0x7fe3ff, transparent: true, opacity: 0.35, depthWrite: false });
+const powerBubbleGeo = SP(0.42, 14, 10);
+
+function addPower(kind, lane, z) {
+  const g = new THREE.Group();
+  const core = new THREE.Mesh(kind === 'magnet' ? magnetGeo : shieldGeo, decoMat);
+  core.castShadow = true;
+  g.add(core);
+  g.add(new THREE.Mesh(powerBubbleGeo, shieldBubbleMat));
   const x = LANE_X[lane];
+  g.position.set(x, 1.0, z);
+  scene.add(g);
+  powerList.push({ kind, mesh: g, x, y: 1.0, z, taken: false, t: 0, hinted: false });
+}
+
+function addObstacle(type, lane, z, opts = {}) {
+  let x = opts.x ?? LANE_X[lane];
   let obj, box;
   if (type === 'low') {
     obj = new THREE.Mesh(PREFAB.barrier, decoMat);
@@ -735,6 +843,10 @@ function addObstacle(type, lane, z) {
     const a = new THREE.Mesh(PREFAB.arch, decoMat); a.castShadow = true; obj.add(a);
     const b = new THREE.Mesh(bannerGeo, bannerMat); b.position.y = 1.95; b.castShadow = true; obj.add(b);
     box = { hw: 1.0, y0: 1.22, h: 2.1, hd: 0.15 };
+  } else if (type === 'manok') {
+    obj = new THREE.Mesh(MANOK_GEO, decoMat);
+    obj.rotation.y = (opts.vx || 0) < 0 ? Math.PI : 0;
+    box = { hw: 0.35, y0: 0, h: 0.8, hd: 0.35 };
   } else {
     obj = new THREE.Mesh(pick(PREFAB.jeeps), decoMat);
     box = { hw: 1.0, y0: 0, h: 2.5, hd: 2.3 };
@@ -742,55 +854,136 @@ function addObstacle(type, lane, z) {
   obj.position.set(x, 0, z);
   obj.castShadow = true;
   scene.add(obj);
-  obstacles.push({ type, lane, x, z, obj, bumped: false, ...box });
+  const o = {
+    type, lane, x, z, obj, bumped: false, hint: opts.hint || type,
+    vx: opts.vx || 0, vz: opts.vz || 0, act: opts.act || 0, active: false, ...box,
+  };
+  obstacles.push(o);
+  return o;
 }
 
-function spawnRow(z) {
-  const early = elapsed < 10 && distance < 150;
+const nearestLane = (x) => (x < -1.1 ? 0 : x > 1.1 ? 2 : 1);
+const otherLanes = (l) => [0, 1, 2].filter((i) => i !== l);
+const coinLine = (lane, z, n, y = 0.7, step = 2.1) => { for (let k = 0; k < n; k++) addCoin(LANE_X[lane], y, z - k * step); };
+const rowGap = () => Math.max(12 + speed * 0.6, 14 + speed * 0.8 + rand(0, 8) - Math.min(7, (level - 1) * 1.4));
+
+// Karaniwang hanay ng harang
+function spawnRow(z, early) {
+  const pEmpty = early ? 0.38 : Math.max(0.2, 0.38 - (level - 1) * 0.045);
   const row = [0, 1, 2].map(() => {
     const r = Math.random();
-    if (r < 0.38) return 'empty';
-    if (r < 0.62) return 'low';
-    if (r < 0.8) return 'high';
+    if (r < pEmpty) return 'empty';
+    const q = Math.random();
+    if (q < 0.4) return 'low';
+    if (q < 0.7) return 'high';
     return 'block';
   });
-  if (early) { // madali muna sa simula
+  if (early) {
     const keep = (Math.random() * 3) | 0;
     for (let i = 0; i < 3; i++) if (i !== keep) row[i] = 'empty';
     if (row[keep] === 'block' && Math.random() < 0.5) row[keep] = 'low';
   }
   if (row.every((t) => t === 'block')) row[(Math.random() * 3) | 0] = 'empty';
-  if (!row.includes('empty') && Math.random() < 0.6) row[(Math.random() * 3) | 0] = 'empty';
+  if (!row.includes('empty') && Math.random() < (level > 2 ? 0.35 : 0.6)) row[(Math.random() * 3) | 0] = 'empty';
 
   row.forEach((t, lane) => { if (t !== 'empty') addObstacle(t, lane, z); });
 
-  // barya
+  const free = [0, 1, 2].filter((l) => row[l] === 'empty');
+  if (!early && free.length && !player.shield && player.magnet <= 0 && powerList.length === 0 && Math.random() < 0.08) {
+    addPower(Math.random() < 0.5 ? 'magnet' : 'shield', pick(free), z - 6);
+    return;
+  }
   if (Math.random() < 0.75) {
-    const lanes = [0, 1, 2].filter((l) => row[l] !== 'block');
-    const lane = pick(lanes);
+    const lane = pick([0, 1, 2].filter((l) => row[l] !== 'block'));
     const x = LANE_X[lane];
     if (row[lane] === 'low' && Math.random() < 0.7) {
       for (let k = 0; k < 5; k++) addCoin(x, 0.8 + (2 - Math.abs(k - 2)) * 0.55, z + (k - 2) * 1.7);
     } else if (row[lane] === 'high') {
       for (let k = 0; k < 4; k++) addCoin(x, 0.5, z + (k - 1.5) * 1.6);
     } else {
-      const n = 5 + ((Math.random() * 4) | 0);
-      for (let k = 0; k < n; k++) addCoin(x, 0.7, z - 3 - k * 2.1);
+      coinLine(lane, z - 3, 5 + ((Math.random() * 4) | 0));
     }
   }
+}
+
+// Trapik: talon tapos dausdos sa iisang lane, ibang lane puno ng jeep
+function spawnCombo(z) {
+  const L = (Math.random() * 3) | 0;
+  const g = Math.max(12, speed * 0.85 + 2);
+  addObstacle('low', L, z, { hint: 'combo' });
+  addObstacle('high', L, z - g);
+  const n = Math.ceil(g / 4.6) + 1;
+  for (const l of otherLanes(L)) for (let k = 0; k < n; k++) addObstacle('block', l, z - k * 4.6);
+  for (let k = 0; k < 5; k++) addCoin(LANE_X[L], 0.8 + (2 - Math.abs(k - 2)) * 0.55, z + (k - 2) * 1.7);
+  for (let k = 0; k < 3; k++) addCoin(LANE_X[L], 0.5, z - g + (k - 1) * 1.6);
+  return z - g - rowGap();
+}
+
+// Mga manok na tumatawid
+function spawnManok(z) {
+  const n = 2 + (level >= 4 ? 1 : 0);
+  for (let k = 0; k < n; k++) {
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const x = side * 4.6;
+    addObstacle('manok', nearestLane(x), z - k * 8, {
+      x, vx: -side * rand(2.6, 4.2), act: rand(1.0, 1.9),
+    });
+  }
+  coinLine((Math.random() * 3) | 0, z + 2, 8, 0.7, 2.2);
+  return z - 8 * (n - 1) - rowGap();
+}
+
+// Jeep na paparating (gumagalaw papunta sa iyo)
+function spawnOncoming(z) {
+  const L = (Math.random() * 3) | 0;
+  const vz = 9 + Math.min(10, level * 1.2);
+  const travel = 14;
+  addObstacle('block', L, z - travel, { vz, hint: 'oncoming', act: travel });
+  const others = otherLanes(L);
+  if (Math.random() < 0.5) addObstacle(Math.random() < 0.5 ? 'low' : 'high', others[0], z);
+  coinLine(others[1], z, 6);
+  return z - travel - rowGap();
+}
+
+// Zigzag ng mga jeep
+function spawnZigzag(z) {
+  const sp = Math.max(14, speed * 0.65);
+  let free = (Math.random() * 3) | 0;
+  const n = 3 + (level >= 5 ? 1 : 0);
+  for (let i = 0; i < n; i++) {
+    const rz = z - i * sp;
+    for (const l of otherLanes(free)) addObstacle('block', l, rz, { hint: 'zigzag' });
+    coinLine(free, rz + 2, 3, 0.7, 2);
+    const opts = [free - 1, free + 1].filter((l) => l >= 0 && l <= 2);
+    if (Math.random() < 0.8) free = pick(opts);
+  }
+  return z - (n - 1) * sp - rowGap();
+}
+
+function spawnNext() {
+  const z = nextRowZ;
+  const early = elapsed < 10 && distance < 150;
+  const r = Math.random();
+  if (!early && level >= 2 && r < 0.11) nextRowZ = spawnCombo(z);
+  else if (!early && distance > 250 && r < 0.22) nextRowZ = spawnManok(z);
+  else if (!early && level >= 3 && r < 0.33) nextRowZ = spawnOncoming(z);
+  else if (!early && level >= 3 && r < 0.42) nextRowZ = spawnZigzag(z);
+  else { spawnRow(z, early); nextRowZ = z - rowGap(); }
 }
 
 function clearRun() {
   for (const o of obstacles) scene.remove(o.obj);
   for (const c of coinList) scene.remove(c.mesh);
+  for (const p of powerList) scene.remove(p.mesh);
   obstacles.length = 0;
   coinList.length = 0;
+  powerList.length = 0;
 }
 
 function resetWorld() {
   clearRun();
-  Object.assign(player, { lane: 1, prevLane: 1, x: 0, y: 0, z: 0, vy: 0, grounded: true, slide: 0, stumble: 0, phase: 0, spin: 0, spinning: false });
-  speed = BASE_SPEED; elapsed = 0; distance = 0; coins = 0; score = 0; shake = 0;
+  Object.assign(player, { lane: 1, prevLane: 1, x: 0, y: 0, z: 0, vy: 0, grounded: true, slide: 0, stumble: 0, phase: 0, spin: 0, spinning: false, shield: false, magnet: 0 });
+  speed = BASE_SPEED; elapsed = 0; distance = 0; coins = 0; score = 0; scoreF = 0; level = 1; shake = 0;
   nextRowZ = -45;
   segments.forEach((seg, i) => {
     seg.position.z = -(i - 3) * SEG_LEN;
@@ -802,6 +995,17 @@ function resetWorld() {
   K.pose.position.set(0, 0, 0);
   K.model.rotation.y = Math.PI;
   K.stars.visible = false;
+  K.bubble.visible = false;
+}
+
+function setCharacter(i) {
+  charIndex = (i + CHARACTERS.length) % CHARACTERS.length;
+  scene.remove(K.root);
+  K = makeKatumpi(CHARACTERS[charIndex].id);
+  scene.add(K.root);
+  store.set('katumpi_char', CHARACTERS[charIndex].id);
+  ui.charName.textContent = CHARACTERS[charIndex].name;
+  menuT = 0;
 }
 
 function startGame() {
@@ -817,7 +1021,8 @@ function startGame() {
   ui.over.classList.add('hidden');
   ui.pause.classList.add('hidden');
   ui.hud.classList.remove('hidden');
-  setTimeout(() => showQuip('Tara, takbo! 😄'), 400);
+  lastLevel = -1;
+  setTimeout(() => showQuip(K.hijab ? 'Bismillah! Takbo na! 😄' : 'Tara, takbo! 😄'), 400);
 }
 
 function pauseGame() {
@@ -855,6 +1060,7 @@ function crash() {
   showQuip('Aray ko! 😵');
   music.volume = MUSIC_VOL * 0.35;
   K.stars.visible = true;
+  K.bubble.visible = false;
   const isBest = score > best;
   if (isBest) { best = score; store.set('katumpi_best', best); }
   setTimeout(() => {
@@ -863,9 +1069,22 @@ function crash() {
     ui.finalScore.textContent = score;
     ui.finalCoins.textContent = coins;
     ui.finalBest.textContent = best;
+    ui.finalLevel.textContent = `Umabot sa Antas ${level} • ${Math.floor(distance)} m`;
     ui.newBest.classList.toggle('hidden', !isBest);
     ui.over.classList.remove('hidden');
   }, 1400);
+}
+
+// Ginagamit ang kalasag; true kung naligtas
+function useShield(o) {
+  if (!player.shield) return false;
+  player.shield = false;
+  if (o) o.bumped = true;
+  shake = 0.4;
+  sfx.shieldBreak();
+  if (navigator.vibrate) navigator.vibrate(80);
+  showQuip('Salamat, kalasag! 🛡️');
+  return true;
 }
 
 // ------------------------------------------------------------------
@@ -919,6 +1138,7 @@ window.addEventListener('pointerup', () => { mouse = null; });
 window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
   if (state === 'menu' && (k === 'enter' || k === ' ')) { startGame(); return; }
+  if (state === 'menu' && (k === 'arrowleft' || k === 'arrowright')) { setCharacter(charIndex + (k === 'arrowleft' ? -1 : 1)); return; }
   if (state === 'over' && (k === 'enter' || k === ' ')) { startGame(); return; }
   if (k === 'p' || k === 'escape') { if (state === 'playing') pauseGame(); else if (state === 'paused') resumeGame(); return; }
   const map = { arrowleft: 'left', a: 'left', arrowright: 'right', d: 'right', arrowup: 'up', w: 'up', ' ': 'up', arrowdown: 'down', s: 'down' };
@@ -926,6 +1146,9 @@ window.addEventListener('keydown', (e) => {
 });
 
 $('playBtn').addEventListener('click', startGame);
+$('prevChar').addEventListener('click', () => setCharacter(charIndex - 1));
+$('nextChar').addEventListener('click', () => setCharacter(charIndex + 1));
+ui.charName.textContent = CHARACTERS[charIndex].name;
 $('retryBtn').addEventListener('click', startGame);
 $('pauseBtn').addEventListener('click', pauseGame);
 $('resumeBtn').addEventListener('click', resumeGame);
@@ -948,10 +1171,17 @@ document.addEventListener('visibilitychange', () => {
 // ------------------------------------------------------------------
 function updatePlaying(dt) {
   elapsed += dt;
-  speed = Math.min(MAX_SPEED, BASE_SPEED + elapsed * 0.2);
+  const newLevel = 1 + Math.floor(distance / LEVEL_DIST);
+  if (newLevel !== level) {
+    level = newLevel;
+    showQuip(`Antas ${level}! 🔥 Bibilis pa!`);
+    sfx.level();
+  }
+  speed = Math.min(MAX_SPEED, BASE_SPEED + elapsed * 0.2 + (level - 1) * 0.8);
   const dz = speed * dt;
   player.z -= dz;
   distance += dz;
+  scoreF += dz * level;
 
   // galaw pakaliwa/pakanan
   player.x += (LANE_X[player.lane] - player.x) * Math.min(1, dt * 14);
@@ -964,19 +1194,49 @@ function updatePlaying(dt) {
   }
   if (player.slide > 0) player.slide -= dt;
   if (player.stumble > 0) player.stumble -= dt;
+  if (player.magnet > 0) player.magnet -= dt;
+
+  // gumagalaw na harang (jeep na paparating, manok na tumatawid)
+  for (const o of obstacles) {
+    if (o.vz) {
+      if (!o.active && player.z - o.z < o.act * (speed + o.vz) / o.vz) { o.active = true; sfx.honk(); }
+      if (o.active) { o.z += o.vz * dt; o.obj.position.z = o.z; }
+    } else if (o.vx) {
+      if (!o.active && player.z - o.z < speed * o.act) { o.active = true; sfx.cluck(); }
+      if (o.active) {
+        o.x += o.vx * dt;
+        o.obj.position.x = o.x;
+        o.obj.position.y = Math.abs(Math.sin(elapsed * 14)) * 0.12;
+        o.lane = nearestLane(o.x);
+        if (Math.abs(o.x) > 7) o.vx = 0;
+      }
+    }
+  }
 
   const h = player.slide > 0 ? SLIDE_H : STAND_H;
 
   // banggaan
   for (const o of obstacles) {
+    if (o.bumped) continue;
     if (Math.abs(o.z - player.z) > o.hd + 0.35) continue;
     const dx = Math.abs(o.x - player.x);
     if (dx > o.hw + 0.3) continue;
     if (player.y + h <= o.y0 || player.y >= o.y0 + o.h) continue;
-    if (dx > 0.8 && !o.bumped && player.prevLane !== o.lane) {
+    if (o.type === 'manok') {
+      o.bumped = true;
+      o.vx = (o.x > player.x ? 1 : -1) * 9;
+      if (useShield(o)) continue;
+      if (player.stumble > 0) { crash(); return; }
+      player.stumble = 4;
+      shake = 0.3;
+      sfx.cluck(); sfx.bump();
+      showQuip('Ay, manok! 🐔 Bok bok!');
+      continue;
+    }
+    if (dx > 0.8 && player.prevLane !== o.lane) {
       // tumama sa gilid — tatalbog pabalik
       o.bumped = true;
-      if (player.stumble > 0) { crash(); return; }
+      if (player.stumble > 0 && !useShield(o)) { crash(); return; }
       player.stumble = 4;
       player.lane = player.prevLane;
       shake = 0.35;
@@ -985,32 +1245,51 @@ function updatePlaying(dt) {
       showQuip('Ay! Muntik na! 😅');
       continue;
     }
-    if (o.bumped) continue;
+    if (useShield(o)) continue;
     crash();
     return;
   }
 
-  // tutorial hints
-  if (elapsed < 40) {
-    for (const o of obstacles) {
-      const ahead = player.z - o.z;
-      if (!hintShown[o.type] && ahead > 0 && ahead < speed * 1.4) {
-        hintShown[o.type] = true;
-        showQuip({ low: 'Swipe pataas ⬆ — Talon!', high: 'Swipe pababa ⬇ — Dausdos!', block: 'Swipe ⬅ ➡ — Umiwas!' }[o.type]);
-        break;
-      }
+  // tutorial hints (unang beses makita)
+  for (const o of obstacles) {
+    const ahead = player.z - o.z;
+    if (!hintShown[o.hint] && ahead > 0 && ahead < speed * 1.4) {
+      hintShown[o.hint] = true;
+      showQuip(HINTS[o.hint]);
+      break;
     }
   }
 
   // barya
   const pcy = player.y + h / 2;
+  const mag = player.magnet > 0;
   for (const c of coinList) {
     if (c.taken) continue;
+    if (mag && c.z < player.z + 1 && c.z > player.z - 16) {
+      const f = Math.min(1, dt * 9);
+      c.x += (player.x - c.x) * f;
+      c.y += (pcy - c.y) * f;
+      c.z += (player.z - c.z) * f;
+      c.mesh.position.set(c.x, c.y, c.z);
+    }
     if (Math.abs(c.z - player.z) < 0.9 && Math.abs(c.x - player.x) < 0.9 && Math.abs(c.y - pcy) < 1.05) {
       c.taken = true;
       coins++;
+      scoreF += 5 * level;
       sfx.coin();
       if (coins % 50 === 0) showQuip(pick(QUIPS_COIN));
+    }
+  }
+
+  // power-ups
+  for (const p of powerList) {
+    if (p.taken) continue;
+    if (!hintShown[p.kind] && player.z - p.z > 0 && player.z - p.z < speed * 1.4) { hintShown[p.kind] = true; showQuip(HINTS[p.kind]); }
+    if (Math.abs(p.z - player.z) < 1 && Math.abs(p.x - player.x) < 1 && Math.abs(p.y - pcy) < 1.2) {
+      p.taken = true;
+      sfx.power();
+      if (p.kind === 'magnet') { player.magnet = 10; showQuip('🧲 Halika, barya! 😆'); }
+      else { player.shield = true; showQuip('🛡️ May kalasag na ako!'); }
     }
   }
 
@@ -1018,12 +1297,9 @@ function updatePlaying(dt) {
   quipT -= dt;
   if (quipT <= 0) { quipT = rand(9, 16); showQuip(pick(QUIPS_RUN)); }
 
-  // spawn & cleanup
-  while (nextRowZ > player.z - 175) {
-    spawnRow(nextRowZ);
-    nextRowZ -= 14 + speed * 0.8 + rand(0, 8);
-  }
-  score = Math.floor(distance) + coins * 5;
+  // spawn
+  while (nextRowZ > player.z - 175) spawnNext();
+  score = Math.floor(scoreF);
 }
 
 function updateWorld(dt) {
@@ -1054,6 +1330,20 @@ function updateWorld(dt) {
     c.mesh.rotation.y = rot + c.z * 0.3;
   }
 
+  for (let i = powerList.length - 1; i >= 0; i--) {
+    const p = powerList[i];
+    if (p.taken) {
+      p.t += dt;
+      p.mesh.scale.setScalar(Math.max(0.01, 1 + p.t * 3));
+      p.mesh.children[1].material.opacity = 0.35;
+      if (p.t > 0.2) { scene.remove(p.mesh); powerList.splice(i, 1); continue; }
+    } else if (p.z > player.z + 10) {
+      scene.remove(p.mesh); powerList.splice(i, 1); continue;
+    }
+    p.mesh.children[0].rotation.y = rot * 0.8;
+    p.mesh.position.y = p.y + Math.sin(rot * 0.7 + p.z) * 0.12;
+  }
+
   // ilaw at anino sumusunod kay Katumpi
   sun.position.set(player.x - 9, 18, player.z - 10);
   sun.target.position.set(player.x, 0, player.z - 4);
@@ -1072,6 +1362,8 @@ function animateKatumpi(dt) {
   K.eyes.forEach((e) => { e.scale.y = blink; });
 
   K.stars.rotation.y += dt * 4;
+  K.bubble.visible = player.shield && state === 'playing';
+  if (K.bubble.visible) K.bubble.material.opacity = 0.2 + Math.sin(performance.now() * 0.008) * 0.08;
 
   if (state === 'menu') {
     menuT += dt;
@@ -1090,7 +1382,8 @@ function animateKatumpi(dt) {
     K.spine.rotation.z = Math.sin(menuT * 2) * 0.05;
     K.head.rotation.z = Math.sin(menuT * 1.7) * 0.18;
     K.head.rotation.x = 0;
-    K.tails.forEach((t, i) => { t.rotation.z = (i ? 1 : -1) * (0.25 + Math.sin(menuT * 5) * 0.12); });
+    if (K.hijab) K.tails.forEach((t) => { t.rotation.x = -0.1 - Math.sin(menuT * 3) * 0.08; t.rotation.z = 0; });
+    else K.tails.forEach((t, i) => { t.rotation.z = (i ? 1 : -1) * (0.25 + Math.sin(menuT * 5) * 0.12); });
     return;
   }
 
@@ -1157,7 +1450,9 @@ function animateKatumpi(dt) {
     // tumatagilid kapag lumilipat ng lane
     K.spine.rotation.z = (LANE_X[player.lane] - player.x) * -0.08;
   }
-  K.tails.forEach((t, i) => {
+  if (K.hijab) {
+    K.tails.forEach((t) => { t.rotation.x = -0.35 - Math.abs(Math.sin(player.phase)) * 0.25 - (player.grounded ? 0 : 0.3); });
+  } else K.tails.forEach((t, i) => {
     const side = i ? 1 : -1;
     t.rotation.z = side * (0.35 + Math.sin(player.phase * 2 + i) * 0.25 + (player.grounded ? 0 : 0.4));
     t.rotation.x = Math.cos(player.phase) * 0.2;
@@ -1196,7 +1491,7 @@ function updateCamera(dt) {
 }
 
 // HUD
-let lastScore = -1, lastCoins = -1;
+let lastScore = -1, lastCoins = -1, lastLevel = -1, lastPw = '';
 function updateHud() {
   if (score !== lastScore) {
     ui.score.textContent = score;
@@ -1204,6 +1499,9 @@ function updateHud() {
     lastScore = score;
   }
   if (coins !== lastCoins) { ui.coinCount.textContent = coins; lastCoins = coins; }
+  if (level !== lastLevel) { ui.level.textContent = `Antas ${level} • x${level}`; lastLevel = level; }
+  const pw = `${player.magnet > 0 ? `<span>🧲 ${Math.ceil(player.magnet)}</span>` : ''}${player.shield ? '<span>🛡️</span>' : ''}`;
+  if (pw !== lastPw) { ui.powers.innerHTML = pw; lastPw = pw; }
 }
 
 // ------------------------------------------------------------------
@@ -1250,4 +1548,4 @@ window.__katumpiAppPause = () => { if (state === 'playing') pauseGame(); music.p
 window.__katumpiAppResume = () => { if (state !== 'paused' && audioStarted) playMusic(); };
 
 // para sa testing
-window.__katumpi = { get state() { return state; }, player, act, startGame, obstacles, get speed() { return speed; }, get score() { return score; } };
+window.__katumpi = { get state() { return state; }, get level() { return level; }, player, act, startGame, setCharacter, obstacles, powerList, get speed() { return speed; }, get score() { return score; }, warp(d) { distance = d; elapsed = d / 25; } };
