@@ -1240,9 +1240,14 @@ setMuted(muted);
 loop();
 
 // Offline / install support (PWA)
-if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+const inAndroidApp = location.hostname === 'appassets.androidplatform.net';
+if (!inAndroidApp && 'serviceWorker' in navigator && location.protocol.startsWith('http')) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
+
+// Tinatawag ng Android app kapag lumabas/bumalik sa app
+window.__katumpiAppPause = () => { if (state === 'playing') pauseGame(); music.pause(); };
+window.__katumpiAppResume = () => { if (state !== 'paused' && audioStarted) playMusic(); };
 
 // para sa testing
 window.__katumpi = { get state() { return state; }, player, act, startGame, obstacles, get speed() { return speed; }, get score() { return score; } };

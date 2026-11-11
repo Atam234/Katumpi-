@@ -62,3 +62,15 @@ www/
   assets/music.mp3
   icons/
 ```
+
+### APK (handa nang i-install)
+
+Ang pinakabagong APK ay nasa **`dist/Katumpi.apk`**. I-download sa phone, buksan, at payagan ang
+"Install unknown apps" kapag hiningi.
+
+Para gumawa ulit ng APK nang walang Android Studio (Ubuntu/Debian):
+
+```bash
+sudo apt-get install android-sdk-platform-23 android-sdk-build-tools dalvik-exchange openjdk-17-jdk
+./android-app/build-apk.sh path/sa/katumpi-release.jks   # gamitin ang parehong keystore para ma-update ang app
+```
