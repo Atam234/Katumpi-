@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3d8fd6"/>
+      <stop offset="0.6" stop-color="#ffe4c4"/>
+      <stop offset="1" stop-color="#ff9f45"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="110" fill="url(#bg)"/>
+  <g transform="translate(0,6)">
+    <rect x="0" y="420" width="512" height="30" fill="#d62839"/>
+    <rect x="0" y="450" width="512" height="30" fill="#ffc300"/>
+    <rect x="0" y="480" width="512" height="32" fill="#2a9d3f"/>
+  </g>
+  <!-- pigtails -->
+  <ellipse cx="118" cy="268" rx="40" ry="78" fill="#1b1210" transform="rotate(25 118 268)"/>
+  <ellipse cx="394" cy="268" rx="40" ry="78" fill="#1b1210" transform="rotate(-25 394 268)"/>
+  <circle cx="138" cy="196" r="20" fill="#d62839"/>
+  <circle cx="374" cy="196" r="20" fill="#d62839"/>
+  <!-- face -->
+  <circle cx="256" cy="262" r="140" fill="#c68a5e"/>
+  <path d="M116 250 C 120 130, 392 130, 396 250 C 360 190, 300 175, 256 178 C 212 175, 152 190, 116 250 Z" fill="#1b1210"/>
+  <path d="M150 220 Q 200 160 256 200 Q 312 160 362 220 Q 330 140 256 132 Q 182 140 150 220 Z" fill="#1b1210"/>
+  <!-- flower -->
+  <g transform="translate(340 170)">
+    <circle cx="0" cy="-16" r="12" fill="#fff"/><circle cx="15" cy="-5" r="12" fill="#fff"/>
+    <circle cx="10" cy="13" r="12" fill="#fff"/><circle cx="-10" cy="13" r="12" fill="#fff"/>
+    <circle cx="-15" cy="-5" r="12" fill="#fff"/><circle cx="0" cy="0" r="9" fill="#ffc300"/>
+  </g>
+  <ellipse cx="206" cy="268" rx="17" ry="22" fill="#1a0f0a"/>
+  <ellipse cx="306" cy="268" rx="17" ry="22" fill="#1a0f0a"/>
+  <circle cx="212" cy="260" r="6" fill="#fff"/>
+  <circle cx="312" cy="260" r="6" fill="#fff"/>
+  <ellipse cx="172" cy="310" rx="22" ry="13" fill="#ff8fa3" opacity=".8"/>
+  <ellipse cx="340" cy="310" rx="22" ry="13" fill="#ff8fa3" opacity=".8"/>
+  <path d="M222 316 Q 256 352 290 316" stroke="#1a0f0a" stroke-width="10" fill="none" stroke-linecap="round"/>
+</svg>

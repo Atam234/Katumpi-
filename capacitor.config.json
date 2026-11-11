@@ -1,0 +1,8 @@
+{
+  "appId": "com.katumpi.takbo",
+  "appName": "Katumpi",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#ffd9a8"
+  }
+}

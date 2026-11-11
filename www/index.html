@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="fil">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#ff8a3d">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Katumpi: Takbo sa Tuca — isang 3D runner game kasama si Katumpi, ang masayahin at makulit na batang taga-Tuca, Binidayan.">
+  <title>Katumpi: Takbo sa Tuca</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="loading"><div class="spinner"></div><p>Naghahanda si Katumpi…</p></div>
+
+  <!-- HUD habang naglalaro -->
+  <div id="hud" class="hidden">
+    <div class="hud-left">
+      <div id="score">0</div>
+      <div id="dist">0 m</div>
+    </div>
+    <div class="hud-right">
+      <div id="coins"><span class="coin-ico"></span><span id="coinCount">0</span></div>
+      <button id="pauseBtn" aria-label="I-pause">❚❚</button>
+    </div>
+  </div>
+
+  <div id="quip"></div>
+
+  <!-- Main menu -->
+  <div id="menu" class="screen menu">
+    <div class="menu-top">
+      <h1>KATUMPI</h1>
+      <h2>Takbo sa Tuca, Binidayan!</h2>
+      <p class="tag">Ang masayahin at makulit na batang taga-Tuca 💛</p>
+    </div>
+    <div class="menu-bottom">
+      <button id="playBtn" class="big">▶ MAGLARO</button>
+      <div class="howto">
+        <span>⬅ ➡ Lumipat</span>
+        <span>⬆ Talon</span>
+        <span>⬇ Dausdos</span>
+      </div>
+      <div class="row">
+        <div id="bestMenu" class="pill">🏆 0</div>
+        <button id="muteBtn" class="small">🔊 Musika</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pause -->
+  <div id="pause" class="screen panel hidden">
+    <div class="card">
+      <h2>Pahinga muna!</h2>
+      <button id="resumeBtn" class="big">▶ Ituloy</button>
+      <button id="muteBtn2" class="small">🔊 Musika</button>
+      <button id="homeBtn" class="small">⌂ Menu</button>
+    </div>
+  </div>
+
+  <!-- Game over -->
+  <div id="over" class="screen panel hidden">
+    <div class="card">
+      <h2>Aray ko! Nadapa si Katumpi!</h2>
+      <div id="newBest" class="hidden">✨ BAGONG RECORD! ✨</div>
+      <div class="stats">
+        <div><small>Score</small><b id="finalScore">0</b></div>
+        <div><small>Barya</small><b id="finalCoins">0</b></div>
+        <div><small>Record</small><b id="finalBest">0</b></div>
+      </div>
+      <button id="retryBtn" class="big">↻ Ulitin</button>
+      <button id="homeBtn2" class="small">⌂ Menu</button>
+    </div>
+  </div>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>

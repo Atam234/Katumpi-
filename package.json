@@ -1,0 +1,17 @@
+{
+  "name": "katumpi",
+  "version": "1.0.0",
+  "description": "Katumpi: Takbo sa Tuca — 3D mobile runner game",
+  "private": true,
+  "scripts": {
+    "start": "npx --yes http-server www -p 8080 -c-1",
+    "android:add": "npx cap add android",
+    "android:sync": "npx cap sync android",
+    "android:open": "npx cap open android"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/cli": "^6.1.2",
+    "@capacitor/core": "^6.1.2"
+  }
+}
