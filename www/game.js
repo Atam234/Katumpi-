@@ -527,12 +527,14 @@ const CHARACTERS = [
   { id: 'hijab', name: 'Katumpi • Hijab' },
 ];
 
-function makeKatumpi(style = 'classic') {
+function makeKatumpi(style = 'classic', pal = {}) {
   const hijab = style === 'hijab';
+  const boy = style === 'boy';
   const T = (c, extra = {}) => new THREE.MeshToonMaterial({ color: c, ...extra });
-  const skin = T(0xc68a5e);
+  const skin = T(pal.skin ?? 0xc68a5e);
+  const shortsM = T(pal.shorts ?? 0x2f5fb3);
   const hairM = T(0x1b1210);
-  const blouse = T(hijab ? 0x3bb6a0 : 0xffc93c);
+  const blouse = T(pal.blouse ?? (hijab ? 0x3bb6a0 : 0xffc93c));
   const red = T(hijab ? 0xffd86b : COLORS.red);
   const shoe = T(hijab ? 0xffffff : 0xe63995);
   const legM = hijab ? T(0x5b3f8f) : skin;
@@ -541,14 +543,15 @@ function makeKatumpi(style = 'classic') {
   const black = new THREE.MeshBasicMaterial({ color: 0x1a0f0a });
   const blush = new THREE.MeshBasicMaterial({ color: 0xff8fa3, transparent: true, opacity: 0.75 });
   const skirtM = new THREE.MeshToonMaterial({ map: hijab ? hijabDressTex : malongTex, side: THREE.DoubleSide });
-  const hijabM = new THREE.MeshToonMaterial({ color: 0xff8fb8, side: THREE.DoubleSide });
+  const hijabM = new THREE.MeshToonMaterial({ color: pal.hijab ?? 0xff8fb8, side: THREE.DoubleSide });
+  if (pal.skirtTint) skirtM.color.set(pal.skirtTint);
   const trimM = T(0xfff3f8);
 
   const meshes = [];
   const M = (geo, mat, parent, x = 0, y = 0, z = 0) => {
     const m = new THREE.Mesh(geo, mat);
     m.position.set(x, y, z);
-    m.castShadow = true;
+    m.castShadow = !pal.noShadow;
     parent.add(m);
     meshes.push(m);
     return m;
@@ -563,6 +566,7 @@ function makeKatumpi(style = 'classic') {
   const legs = [-1, 1].map((s) => {
     const g = new THREE.Group(); g.position.x = s * 0.12; hips.add(g);
     M(CY(0.075, 0.062, 0.74, 8), legM, g, 0, -0.38, 0);
+    if (boy) M(CY(0.095, 0.09, 0.3, 8), shortsM, g, 0, -0.13, 0);
     M(B(0.17, 0.11, 0.28), shoe, g, 0, -0.77, 0.05);
     M(B(0.18, 0.04, 0.29), T(hijab ? 0xff8fb8 : 0xffffff), g, 0, -0.81, 0.05);
     return g;
@@ -571,6 +575,7 @@ function makeKatumpi(style = 'classic') {
   // body
   const spine = new THREE.Group(); spine.position.y = 0.82; model.add(spine);
   if (hijab) M(new THREE.CylinderGeometry(0.21, 0.42, 0.82, 20, 1, true), skirtM, spine, 0, -0.14, 0); // mahabang bestida
+  else if (boy) M(CY(0.21, 0.2, 0.22, 14), shortsM, spine, 0, 0.16, 0); // shorts
   else M(new THREE.CylinderGeometry(0.21, 0.4, 0.55, 20, 1, true), skirtM, spine, 0, 0.0, 0); // malong-style na palda
   M(CY(0.22, 0.22, 0.06, 16), red, spine, 0, 0.27, 0); // sinturon
   M(CY(0.17, 0.21, 0.42, 14), blouse, spine, 0, 0.5, 0);
@@ -617,11 +622,13 @@ function makeKatumpi(style = 'classic') {
     const hairCap = new THREE.SphereGeometry(0.285, 22, 16, 0, Math.PI * 2, 0, Math.PI * 0.56);
     const cap = M(hairCap, hairM, head, 0, HY, -0.01); cap.rotation.x = -0.5;
     const back = M(SP(0.25, 14, 12), hairM, head, 0, HY - 0.12, -0.1); back.scale.set(1.08, 1.1, 0.9);
+    if (boy) { back.position.y = HY - 0.02; back.scale.set(1.03, 0.85, 0.85); }
+    if (pal.kopiah) M(CY(0.19, 0.21, 0.14, 16), T(pal.kopiah), head, 0, HY + 0.24, -0.02);
     for (let i = -2; i <= 2; i++) {
       const b = M(SP(0.075, 8, 6), hairM, head, i * 0.07, HY + 0.15 - Math.abs(i) * 0.01, 0.2 - Math.abs(i) * 0.02);
       b.scale.set(1, 0.75, 0.6);
     }
-    tails = [-1, 1].map((s) => {
+    tails = boy ? [] : [-1, 1].map((s) => {
       const g = new THREE.Group(); g.position.set(s * 0.25, HY + 0.1, -0.05); head.add(g);
       const t = M(SP(0.11, 10, 8), hairM, g, s * 0.1, -0.12, 0); t.scale.set(0.9, 1.9, 0.9);
       M(new THREE.TorusGeometry(0.06, 0.025, 6, 12), red, g, s * 0.03, 0.02, 0).rotation.y = Math.PI / 2;
@@ -630,6 +637,7 @@ function makeKatumpi(style = 'classic') {
       return g;
     });
     const fl = new THREE.Group(); fl.position.set(0.16, HY + 0.22, 0.12); head.add(fl);
+    fl.visible = !boy;
     for (let i = 0; i < 5; i++) {
       const a = (i / 5) * Math.PI * 2;
       M(SP(0.04, 6, 4), T(0xffffff), fl, Math.cos(a) * 0.045, Math.sin(a) * 0.045, 0);
@@ -663,7 +671,7 @@ function makeKatumpi(style = 'classic') {
   bubble.position.y = 0.95; bubble.scale.set(0.85, 1.05, 0.85); bubble.visible = false;
   root.add(bubble);
 
-  return { root, pose, model, spine, head, legs, arms, tails, eyes, stars, bubble, meshes, hijab };
+  return { root, pose, model, spine, head, legs, arms, tails, eyes, stars, bubble, meshes, hijab, boy };
 }
 
 let charIndex = Math.max(0, CHARACTERS.findIndex((c) => c.id === store.get('katumpi_char', 'classic')));
@@ -750,7 +758,7 @@ const ui = {
   bestMenu: $('bestMenu'), finalScore: $('finalScore'), finalCoins: $('finalCoins'),
   finalBest: $('finalBest'), newBest: $('newBest'),
   musicBtn: $('musicBtn'), musicBtn2: $('musicBtn2'), sfxBtn: $('sfxBtn'), sfxBtn2: $('sfxBtn2'),
-  level: $('level'), powers: $('powers'), charName: $('charName'), finalLevel: $('finalLevel'),
+  level: $('level'), powers: $('powers'), rank: $('rank'), charName: $('charName'), finalLevel: $('finalLevel'),
 };
 let best = store.get('katumpi_best', 0);
 ui.bestMenu.textContent = `🏆 ${best}`;
@@ -823,6 +831,42 @@ const MANOK_GEO = build((g) => {
   }
 });
 
+// Iba pang sasakyan: kotse at tricycle (harap ay nasa +z)
+function kotse(g, body) {
+  for (const x of [-0.85, 0.85]) for (const z of [1.25, -1.25]) {
+    part(g, CY(0.36, 0.36, 0.26, 14), 0x1d1d1d, x, 0.36, z, 0, 0, Math.PI / 2);
+    part(g, CY(0.16, 0.16, 0.28, 8), 0xd8d8d8, x, 0.36, z, 0, 0, Math.PI / 2);
+  }
+  part(g, B(1.8, 0.6, 4.0), body, 0, 0.72, 0);
+  part(g, B(1.6, 0.5, 2.0), body, 0, 1.25, -0.2);
+  part(g, B(1.64, 0.36, 1.7), 0x24323f, 0, 1.27, -0.2);
+  part(g, B(1.46, 0.38, 2.04), 0x24323f, 0, 1.27, -0.2);
+  part(g, B(1.56, 0.08, 1.9), body, 0, 1.53, -0.2);
+  part(g, B(1.84, 0.16, 0.14), 0xbdbdbd, 0, 0.5, 2.0);
+  part(g, B(1.84, 0.16, 0.14), 0xbdbdbd, 0, 0.5, -2.0);
+  for (const x of [-0.65, 0.65]) {
+    part(g, SP(0.13, 8, 6), 0xfff4b0, x, 0.8, 1.98);
+    part(g, B(0.3, 0.14, 0.06), 0xe02020, x, 0.82, -2.01);
+  }
+}
+function trike(g, body) {
+  part(g, CY(0.34, 0.34, 0.2, 12), 0x1d1d1d, 0, 0.34, 1.15, 0, 0, Math.PI / 2);
+  for (const x of [-0.85, 0.85]) part(g, CY(0.34, 0.34, 0.22, 12), 0x1d1d1d, x, 0.34, -0.75, 0, 0, Math.PI / 2);
+  part(g, B(1.75, 0.2, 2.5), 0x333333, 0, 0.5, 0);
+  part(g, B(1.7, 0.75, 2.2), body, 0, 0.95, -0.1);
+  part(g, B(1.72, 0.14, 2.22), COLORS.yellow, 0, 1.1, -0.1);
+  for (const x of [-0.8, 0.8]) for (const z of [0.95, -1.15]) part(g, B(0.08, 0.6, 0.08), 0xdddddd, x, 1.6, z);
+  part(g, B(1.6, 0.5, 0.06), 0x24323f, 0, 1.6, 0.98);
+  part(g, B(1.85, 0.1, 2.6), body, 0, 1.92, -0.1);
+  part(g, SP(0.13, 8, 6), 0xfff4b0, 0, 0.85, 1.05);
+  part(g, B(0.5, 0.12, 0.06), 0xe02020, 0, 0.75, -1.22);
+}
+const VEHICLES = {
+  jeep: { geos: PREFAB.jeeps, hw: 1.0, h: 2.5, hd: 2.3 },
+  kotse: { geos: [0xe63946, 0xf4f4f4, 0x2e86de, 0xffb703, 0x3a3a45].map((c) => build((g) => kotse(g, c))), hw: 0.95, h: 1.6, hd: 2.05 },
+  trike: { geos: [0x2a9d3f, 0xe63995, 0x2e86de].map((c) => build((g) => trike(g, c))), hw: 0.95, h: 1.95, hd: 1.35 },
+};
+
 // Power-ups
 const magnetGeo = build((g) => {
   part(g, new THREE.TorusGeometry(0.3, 0.1, 8, 18, Math.PI), 0xe53935, 0, 0.05, 0);
@@ -862,8 +906,11 @@ function addObstacle(type, lane, z, opts = {}) {
     obj.rotation.y = (opts.vx || 0) < 0 ? Math.PI : 0;
     box = { hw: 0.35, y0: 0, h: 0.8, hd: 0.35 };
   } else {
-    obj = new THREE.Mesh(pick(PREFAB.jeeps), decoMat);
-    box = { hw: 1.0, y0: 0, h: 2.5, hd: 2.3 };
+    const V = VEHICLES[opts.kind || pick(['jeep', 'kotse', 'kotse', 'trike'])];
+    obj = new THREE.Mesh(pick(V.geos), decoMat);
+    // umaandar palayo = nakatalikod; paparating = nakaharap
+    obj.rotation.y = opts.vz < 0 ? Math.PI : opts.vz > 0 ? 0 : (Math.random() < 0.5 ? Math.PI : 0);
+    box = { hw: V.hw, y0: 0, h: V.h, hd: V.hd };
   }
   obj.position.set(x, 0, z);
   obj.castShadow = true;
@@ -900,7 +947,12 @@ function spawnRow(z, early) {
   if (row.every((t) => t === 'block')) row[(Math.random() * 3) | 0] = 'empty';
   if (!row.includes('empty') && Math.random() < (level > 2 ? 0.35 : 0.6)) row[(Math.random() * 3) | 0] = 'empty';
 
-  row.forEach((t, lane) => { if (t !== 'empty') addObstacle(t, lane, z); });
+  row.forEach((t, lane) => {
+    if (t === 'empty') return;
+    // karamihan ng sasakyan ay umaandar sa daan (parehong direksyon, mas mabagal kay Katumpi)
+    if (t === 'block' && !early && Math.random() < 0.6) addObstacle(t, lane, z, { vz: -rand(4, 7), act: 10 });
+    else addObstacle(t, lane, z);
+  });
 
   const free = [0, 1, 2].filter((l) => row[l] === 'empty');
   if (!early && free.length && !player.shield && player.magnet <= 0 && powerList.length === 0 && Math.random() < 0.08) {
@@ -927,7 +979,7 @@ function spawnCombo(z) {
   addObstacle('low', L, z, { hint: 'combo' });
   addObstacle('high', L, z - g);
   const n = Math.ceil(g / 4.6) + 1;
-  for (const l of otherLanes(L)) for (let k = 0; k < n; k++) addObstacle('block', l, z - k * 4.6);
+  for (const l of otherLanes(L)) for (let k = 0; k < n; k++) addObstacle('block', l, z - k * 4.6, { kind: 'jeep' });
   for (let k = 0; k < 5; k++) addCoin(LANE_X[L], 0.8 + (2 - Math.abs(k - 2)) * 0.55, z + (k - 2) * 1.7);
   for (let k = 0; k < 3; k++) addCoin(LANE_X[L], 0.5, z - g + (k - 1) * 1.6);
   return z - g - rowGap();
@@ -1011,6 +1063,7 @@ function resetWorld() {
   K.model.rotation.y = Math.PI;
   K.stars.visible = false;
   K.bubble.visible = false;
+  resetRivals();
 }
 
 function setCharacter(i) {
@@ -1036,7 +1089,7 @@ function startGame() {
   ui.over.classList.add('hidden');
   ui.pause.classList.add('hidden');
   ui.hud.classList.remove('hidden');
-  lastLevel = -1;
+  lastLevel = -1; lastRank = -1;
   setTimeout(() => showQuip(K.hijab ? 'Bismillah! Takbo na! 😄' : 'Tara, takbo! 😄'), 400);
 }
 
@@ -1073,6 +1126,7 @@ function crash() {
   sfx.crash();
   if (navigator.vibrate) navigator.vibrate(200);
   showQuip('Aray ko! 😵');
+  crashRank = rank;
   music.volume = MUSIC_VOL * 0.35;
   K.stars.visible = true;
   K.bubble.visible = false;
@@ -1084,7 +1138,7 @@ function crash() {
     ui.finalScore.textContent = score;
     ui.finalCoins.textContent = coins;
     ui.finalBest.textContent = best;
-    ui.finalLevel.textContent = `Umabot sa Antas ${level} • ${Math.floor(distance)} m`;
+    ui.finalLevel.textContent = `Antas ${level} • ${Math.floor(distance)} m • ${RANK_TXT[crashRank - 1]} sa karera`;
     ui.newBest.classList.toggle('hidden', !isBest);
     ui.over.classList.remove('hidden');
   }, 1400);
@@ -1100,6 +1154,140 @@ function useShield(o) {
   if (navigator.vibrate) navigator.vibrate(80);
   showQuip('Salamat, kalasag! 🛡️');
   return true;
+}
+
+// ------------------------------------------------------------------
+// Mga batang kalaro na nakikipagkarera kay Katumpi
+// ------------------------------------------------------------------
+const RIVAL_DEFS = [
+  { name: 'Omar', style: 'boy', pal: { blouse: 0xe63946, shorts: 0x1d3557, kopiah: 0xffffff }, start: -7, catchAt: 260, amp: 3.2, f: 0.21 },
+  { name: 'Sittie', style: 'hijab', pal: { hijab: 0x5aa9e6, blouse: 0xb07ad9, skirtTint: 0xe2c4ff }, start: -11, catchAt: 620, amp: 3.8, f: 0.17 },
+  { name: 'Jamal', style: 'boy', pal: { blouse: 0x2a9d3f, shorts: 0x6b4423, skin: 0xb5764a }, start: -15, catchAt: 1100, amp: 4.2, f: 0.14 },
+];
+const blobGeo = new THREE.CircleGeometry(0.42, 16); blobGeo.rotateX(-Math.PI / 2);
+const blobMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false });
+const rivals = RIVAL_DEFS.map((def, i) => {
+  const rig = makeKatumpi(def.style, { ...def.pal, noShadow: true });
+  rig.root.scale.setScalar(0.94);
+  rig.root.visible = false;
+  const blob = new THREE.Mesh(blobGeo, blobMat);
+  rig.root.add(blob);
+  scene.add(rig.root);
+  return { def, rig, blob, i, rel: 0, lane: 1, x: 0, y: 0, vy: 0, slide: 0, phase: i * 1.7, ahead: true, z: 0 };
+});
+let rivalPenalty = 0, rank = 1, raceQuipT = 0, crashRank = 1;
+const RANK_TXT = ['Una', 'Ika-2', 'Ika-3', 'Ika-4'];
+
+function resetRivals() {
+  const lanes = [0, 2, 1];
+  rivals.forEach((r, i) => {
+    Object.assign(r, { rel: -2.5 - i * 1.8, lane: lanes[i], x: LANE_X[lanes[i]], y: 0, vy: 0, slide: 0, ahead: true });
+  });
+  rivalPenalty = 0; rank = rivals.length + 1; raceQuipT = 0;
+}
+
+function rivalLaneBlocked(l, z, look) {
+  for (const o of obstacles) {
+    if (o.type !== 'block' || o.lane !== l) continue;
+    const d = z - o.z;
+    if (d > -(o.hd + 1.5) && d < look + o.hd) return true;
+  }
+  return false;
+}
+
+function raceQuip(text) {
+  if (raceQuipT > 0) return;
+  raceQuipT = 3.5;
+  showQuip(text);
+}
+
+function animateRival(r, dt) {
+  const g = r.rig, [legL, legR] = g.legs, [armL, armR] = g.arms;
+  const k = Math.min(1, dt * 14);
+  r.phase += dt * speed * 0.55;
+  const s = Math.sin(r.phase);
+  // [poseRotX, poseY, legL, legR, armLx, armRx, armLz, armRz, spineX]
+  const p = r.slide > 0 && r.y <= 0 ? [1.15, 0.28, 0.1, -0.1, -2.6, -2.6, -0.3, 0.3, -0.2]
+    : r.y > 0 ? [0, 0, 0.9, -0.3, -0.4, -0.4, -2.4, 2.4, 0.05]
+      : [0, s * s * 0.085, s * 0.95, -s * 0.95, -s * 0.9, s * 0.9, -0.18, 0.18, 0.16];
+  g.pose.rotation.x = lerp(g.pose.rotation.x, p[0], k);
+  g.pose.position.y = lerp(g.pose.position.y, p[1], k);
+  legL.rotation.x = lerp(legL.rotation.x, p[2], k);
+  legR.rotation.x = lerp(legR.rotation.x, p[3], k);
+  armL.rotation.x = lerp(armL.rotation.x, p[4], k);
+  armR.rotation.x = lerp(armR.rotation.x, p[5], k);
+  armL.rotation.z = lerp(armL.rotation.z, p[6], k);
+  armR.rotation.z = lerp(armR.rotation.z, p[7], k);
+  g.spine.rotation.x = lerp(g.spine.rotation.x, p[8], k);
+  g.tails.forEach((t) => { t.rotation.x = -0.4; });
+}
+
+function updateRivals(dt) {
+  const show = state !== 'menu';
+  if (raceQuipT > 0) raceQuipT -= dt;
+  if (rivalPenalty > 0) rivalPenalty = Math.max(0, rivalPenalty - dt * 0.35);
+  let ahead = 0;
+  for (const r of rivals) {
+    r.rig.root.visible = show && r.rel > -90;
+    if (!show) continue;
+    const def = r.def;
+    if (state === 'playing') {
+      // unti-unting naaabutan, pero pabalik-balik ang agwat para may habulan
+      const bias = Math.min(2, def.start * (1 - distance / def.catchAt));
+      const wave = def.amp * Math.sin(elapsed * def.f + r.i * 2.1) * Math.min(1, elapsed / 15);
+      const target = clamp(bias + wave - rivalPenalty, -38, 6.5);
+      r.rel = damp(r.rel, target, 0.9, dt);
+    } else {
+      r.rel -= speed * 0.9 * dt; // nadapa si Katumpi — tuloy ang takbo nila
+    }
+    r.z = player.z + r.rel;
+
+    // simpleng AI: umiiwas, tumatalon, dumadausdos
+    const look = speed * 0.45 + 3;
+    let near = null;
+    for (const o of obstacles) {
+      if (o.lane !== r.lane) continue;
+      const d = r.z - o.z;
+      if (d > -(o.hd + 0.5) && d < look + o.hd && (!near || o.z > near.z)) near = o;
+    }
+    const crowd = state === 'playing' && Math.abs(r.rel) < 1.6 && r.lane === player.lane;
+    if ((near && near.type === 'block') || crowd) {
+      const opts = [r.lane - 1, r.lane + 1].filter((l) => l >= 0 && l <= 2 && !rivalLaneBlocked(l, r.z, look + 4)
+        && !(Math.abs(r.rel) < 1.6 && l === player.lane));
+      if (opts.length) r.lane = pick(opts);
+    } else if (near) {
+      const d = r.z - near.z;
+      if (d < speed * 0.22 + 1) {
+        if ((near.type === 'low' || near.type === 'manok') && r.y <= 0) r.vy = JUMP_V;
+        else if (near.type === 'high' && r.slide <= 0.1) r.slide = SLIDE_TIME;
+      }
+    }
+    if (r.vy !== 0 || r.y > 0) {
+      r.y += r.vy * dt;
+      r.vy -= GRAVITY * dt;
+      if (r.y <= 0) { r.y = 0; r.vy = 0; }
+    }
+    if (r.slide > 0) r.slide -= dt;
+    r.x = damp(r.x, LANE_X[r.lane], 10, dt);
+    r.rig.root.position.set(r.x, r.y, r.z);
+    r.blob.position.y = 0.03 - r.y / 0.94;
+    animateRival(r, dt);
+
+    // lampasan
+    if (state === 'playing') {
+      if (r.ahead && r.rel > 0.6) {
+        r.ahead = false;
+        scoreF += 50 * level;
+        sfx.power();
+        raceQuip(`Nalampasan mo si ${def.name}! 😆`);
+      } else if (!r.ahead && r.rel < -0.6) {
+        r.ahead = true;
+        raceQuip(`Nauna si ${def.name}! Habulin mo! 🏃`);
+      }
+    }
+    if (r.ahead) ahead++;
+  }
+  if (state === 'playing') rank = ahead + 1;
 }
 
 // ------------------------------------------------------------------
@@ -1224,8 +1412,13 @@ function updatePlaying(dt) {
   // gumagalaw na harang (jeep na paparating, manok na tumatawid)
   for (const o of obstacles) {
     if (o.vz) {
-      if (!o.active && player.z - o.z < o.act * (speed + o.vz) / o.vz) { o.active = true; sfx.honk(); }
-      if (o.active) { o.z += o.vz * dt; o.obj.position.z = o.z; }
+      if (!o.active && player.z - o.z < o.act * (speed + o.vz) / Math.abs(o.vz)) { o.active = true; o.go = 0; if (o.vz > 0) sfx.honk(); }
+      if (o.active) {
+        o.go = Math.min(1, o.go + dt * 2.5); // banayad na pag-arangkada
+        o.z += o.vz * o.go * dt;
+        o.obj.position.z = o.z;
+        o.obj.position.y = Math.sin(elapsed * 22 + o.z) * 0.015;
+      }
     } else if (o.vx) {
       if (!o.active && player.z - o.z < speed * o.act) { o.active = true; sfx.cluck(); }
       if (o.active) {
@@ -1252,7 +1445,7 @@ function updatePlaying(dt) {
       o.vx = (o.x > player.x ? 1 : -1) * 9;
       if (useShield(o)) continue;
       if (player.stumble > 0) { crash(); return; }
-      player.stumble = 4;
+      player.stumble = 4; rivalPenalty += 5;
       shake = 0.3;
       sfx.cluck(); sfx.bump();
       showQuip('Ay, manok! 🐔 Bok bok!');
@@ -1262,7 +1455,7 @@ function updatePlaying(dt) {
       // tumama sa gilid — tatalbog pabalik
       o.bumped = true;
       if (player.stumble > 0 && !useShield(o)) { crash(); return; }
-      player.stumble = 4;
+      player.stumble = 4; rivalPenalty += 5;
       player.lane = player.prevLane;
       shake = 0.35;
       sfx.bump();
@@ -1530,7 +1723,7 @@ function updateCamera(dt) {
 }
 
 // HUD
-let lastScore = -1, lastCoins = -1, lastLevel = -1, lastPw = '';
+let lastScore = -1, lastCoins = -1, lastLevel = -1, lastPw = '', lastRank = -1;
 function updateHud() {
   if (score !== lastScore) {
     ui.score.textContent = score;
@@ -1541,6 +1734,7 @@ function updateHud() {
   if (level !== lastLevel) { ui.level.textContent = `Antas ${level} • x${level}`; lastLevel = level; }
   const pw = `${player.magnet > 0 ? `<span>🧲 ${Math.ceil(player.magnet)}</span>` : ''}${player.shield ? '<span>🛡️</span>' : ''}`;
   if (pw !== lastPw) { ui.powers.innerHTML = pw; lastPw = pw; }
+  if (rank !== lastRank) { ui.rank.textContent = `🏁 ${RANK_TXT[rank - 1]} sa ${rivals.length + 1}`; ui.rank.classList.toggle('first', rank === 1); lastRank = rank; }
 }
 
 // ------------------------------------------------------------------
@@ -1598,7 +1792,7 @@ function loop() {
   dtS += (Math.min(raw, 0.1) - dtS) * 0.3;
   const dt = Math.min(0.05, dtS);
   if (state === 'playing') { updatePlaying(dt); updateHud(); }
-  if (state !== 'paused') updateWorld(dt);
+  if (state !== 'paused') { updateWorld(dt); updateRivals(dt); }
   animateKatumpi(dt);
   updateCamera(dt);
   renderer.render(scene, camera);
@@ -1624,4 +1818,4 @@ window.__katumpiAppPause = () => { if (state === 'playing') pauseGame(); music.p
 window.__katumpiAppResume = () => { if (state !== 'paused' && audioStarted) playMusic(); };
 
 // para sa testing
-window.__katumpi = { get state() { return state; }, get level() { return level; }, player, act, startGame, setCharacter, obstacles, powerList, get speed() { return speed; }, get score() { return score; }, warp(d) { distance = d; elapsed = d / 25; }, get audio() { return { musicPlaying: !music.paused, musicOn, sfxOn }; } };
+window.__katumpi = { get state() { return state; }, get level() { return level; }, get rank() { return rank; }, rivals, player, act, startGame, setCharacter, obstacles, powerList, get speed() { return speed; }, get score() { return score; }, warp(d) { distance = d; elapsed = d / 25; }, get audio() { return { musicPlaying: !music.paused, musicOn, sfxOn }; } };

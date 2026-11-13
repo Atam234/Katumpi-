@@ -154,3 +154,9 @@ h2 {
 #finalLevel { font-weight: 700; opacity: .95; }
 
 .small.off { background: rgba(80, 80, 90, .85); box-shadow: 0 4px 0 #2d2d35; opacity: .9; }
+
+#rank {
+  display: inline-block; margin-top: 4px; font-size: 14px; font-weight: 800;
+  background: rgba(0,0,0,.35); border-radius: 999px; padding: 3px 10px;
+}
+#rank.first { background: linear-gradient(180deg, #ffcf3a, #ff8a00); }

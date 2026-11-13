@@ -24,6 +24,9 @@ Ang mga kulay ay hango sa langkit/okir (pula, dilaw, berde, lila).
   - 🚙🚙 **Trapik** — talon ⬆ tapos dausdos ⬇ agad sa iisang lane
   - 🚙 **Paparating na jeep** — umaandar papunta sa iyo!
   - ⬅➡ **Zigzag** — sunod-sunod na jeep, bilisan ang paglipat
+- 🏁 **Karera:** tatlong batang kalaro (sina Omar, Sittie at Jamal) ang nakikipagpaligsahan kay Katumpi —
+  nasa HUD ang ranggo mo (hal. "Ika-2 sa 4"), may bonus kapag nalampasan mo sila, at nakakauna sila kapag natisod ka.
+- 🚗 **Umaandar na sasakyan:** kotse, tricycle at jeep na tumatakbo sa daan (hindi lang nakaparada).
 - Power-ups: 🧲 **Magnet** (hinihigop ang barya, 10 seg) at 🛡️ **Kalasag** (ligtas sa isang bangga).
 - Kunin ang mga **barya** (+5 puntos bawat isa).
 - Kapag tumama sa gilid, tatalbog si Katumpi pabalik — pero kung dalawang beses agad, nadapa na siya!

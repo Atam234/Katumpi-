@@ -1,5 +1,5 @@
 // Service worker: para gumana kahit walang internet
-const CACHE = 'katumpi-v4';
+const CACHE = 'katumpi-v5';
 const FILES = [
   './', 'index.html', 'style.css', 'game.js', 'manifest.json',
   'lib/three.module.min.js', 'assets/music.mp3',
